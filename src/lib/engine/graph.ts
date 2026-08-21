@@ -86,6 +86,31 @@ export function wouldUnlock(id: string, progress: Record<string, NodeProgress>):
   );
 }
 
+/**
+ * All transitively-required, currently-unsatisfied prerequisite nodes for `id`
+ * — the shortest mastery path (in an AND-gated DAG every unsatisfied ancestor
+ * is required, so "shortest" = exactly this set, ordered by level).
+ */
+export function masteryPath(id: string, progress: Record<string, NodeProgress>): SkillNode[] {
+  const need = new Map<string, SkillNode>();
+  const visit = (nid: string) => {
+    const node = NODE_MAP.get(nid);
+    if (!node) return;
+    for (const p of node.prereqs) {
+      if (tierAtLeast(progressTier(progress, p.id), p.tier ?? DEFAULT_EDGE_TIER)) continue;
+      if (!need.has(p.id)) {
+        const pn = NODE_MAP.get(p.id);
+        if (pn) {
+          need.set(p.id, pn);
+          visit(p.id);
+        }
+      }
+    }
+  };
+  visit(id);
+  return [...need.values()].sort((a, b) => a.level - b.level || a.hours - b.hours);
+}
+
 // ── Layout (computed once; deterministic; pure content function) ───
 export interface LayoutNode {
   id: string;

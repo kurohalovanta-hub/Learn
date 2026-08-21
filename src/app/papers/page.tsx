@@ -100,8 +100,15 @@ function PaperCard({ paper: p, status, compact, focused }: { paper: Paper; statu
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] text-faint">#{p.order}</span>
         {p.spine && <span className="rounded bg-acc-frontier/15 px-1 py-0.5 font-mono text-[9px] text-acc-frontier">SPINE</span>}
-        <button onClick={() => setOpen(!open)} className={`min-w-0 flex-1 truncate text-left text-[13px] font-medium hover:text-acc ${compact ? "" : "sm:text-sm"}`}>
+        <Link href={`/papers/${p.id}`} className={`min-w-0 flex-1 truncate text-left text-[13px] font-medium hover:text-acc ${compact ? "" : "sm:text-sm"}`}>
           {p.title}
+        </Link>
+        <button
+          onClick={() => setOpen(!open)}
+          className="rounded px-1 font-mono text-[11px] text-faint hover:text-acc"
+          aria-label={open ? "collapse" : "quick view"}
+        >
+          {open ? "▴" : "▾"}
         </button>
         <span className="rounded px-1.5 py-0.5 font-mono text-[9.5px]" style={{ color: VERDICT_COLOR[p.verdict], background: `${VERDICT_COLOR[p.verdict]}14` }}>
           {p.verdict}
@@ -112,6 +119,7 @@ function PaperCard({ paper: p, status, compact, focused }: { paper: Paper; statu
       {open && (
         <div className="mt-3 space-y-3 border-t border-line pt-3 text-sm">
           <div className="flex flex-wrap gap-3 text-xs">
+            <Link className="text-acc-frontier hover:underline" href={`/papers/${p.id}`}>study page →</Link>
             <a className="text-acc hover:underline" href={p.url} target="_blank" rel="noopener noreferrer">paper ↗</a>
             {p.codeUrl && <a className="text-acc-robot hover:underline" href={p.codeUrl} target="_blank" rel="noopener noreferrer">code ↗</a>}
             <span className="text-faint">{p.authors}{p.venue ? ` · ${p.venue}` : ""}</span>
