@@ -238,7 +238,7 @@ export const L1_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l1-numpy" }],
     hours: 4,
-    primary: { resourceId: "py2numpy", sections: "Worked case studies (game of life, gradient descent case)" },
+    primary: { resourceId: "py2numpy", sections: "Worked case studies: ch. 4 Game of Life (work through), Mandelbrot (read), boids (skim) (curation 2026-08-21: the book has no gradient-descent case)" },
     exercises: [
       "Conway's Game of Life step with zero loops",
       "Batch polynomial evaluation via Vandermonde matrix",

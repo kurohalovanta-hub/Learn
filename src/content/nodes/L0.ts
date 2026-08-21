@@ -41,7 +41,7 @@ export const L0_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l0-terminal" }],
     hours: 2,
-    primary: { resourceId: "missing-semester", sections: "2026 L3 (Development Environment and Tools)" },
+    primary: { resourceId: "missing-semester", sections: "Official VS Code 'Getting Started with Python' tutorial (code.visualstudio.com/docs/python) as the do-along; 2026 L3 only for LSP concepts (curation 2026-08-21: L3 is vim/LSP-focused, no VS Code walkthrough)" },
     exercises: ["Set up format-on-save; step through a 20-line script in the VS Code debugger with a breakpoint and a watch expression"],
     masteryGate: "bronze",
     masteryTest: "Live-edit a multi-file project: rename a symbol across files, jump between definition/usages, run and debug — all without touching the mouse more than twice.",
@@ -61,7 +61,7 @@ export const L0_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l0-terminal" }],
     hours: 3,
-    primary: { resourceId: "missing-semester", sections: "2026 L3 tooling segment + hands-on: create 3 separate envs" },
+    primary: { resourceId: "missing-semester", sections: "2026 L6 \u00a71 Dependencies & Environments (venv/pip/uv) + PyPA pip+venv guide do-along; hands-on: create 3 separate envs (curation 2026-08-21: env content moved from L3 to L6 in the 2026 edition)" },
     exercises: [
       "Create two environments with different NumPy versions; prove which one a script uses and why",
       "Intentionally create a broken install, read the error, repair it",
@@ -130,7 +130,7 @@ export const L0_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l0-terminal" }],
     hours: 3,
-    primary: { resourceId: "missing-semester", sections: "2026 L4 Debugging and Profiling (first half) + deliberate-practice reps below" },
+    primary: { resourceId: "missing-semester", sections: "2020 edition Debugging lecture, first half (print/logging/pdb \u2014 Python-first) + deliberate-practice reps below; 2026 L4 only for its AI-for-debugging section (curation 2026-08-21: 2026 L4 is C/systems-heavy)" },
     exercises: [
       "Take 5 pre-broken scripts (typo, wrong type, off-by-one, bad path, silent logic bug) and fix each while narrating hypothesis → test → conclusion",
       "Introduce a bug into working code, hand it to tomorrow-you, fix it cold",

@@ -86,8 +86,8 @@ export const L10_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l10-mdp", tier: "gold" }, { id: "l3-backprop-theory", tier: "gold" }],
     hours: 7,
-    primary: { resourceId: "cs285", sections: "Lectures 4–6 (policy gradients, actor-critic)" },
-    backup: { resourceId: "spinningup-essays", sections: "Intro to Policy Optimization (the derivation companion)" },
+    primary: { resourceId: "spinningup-essays", sections: "Part 3: Intro to Policy Optimization (log-derivative trick, EGLP, reward-to-go, baselines) + S&B §13.1–13.4 — then implement REINFORCE from scratch (curation 2026-08-21, HANDOVERFINAL §15: CS285-first is wrong for first exposure)" },
+    backup: { resourceId: "cs285", sections: "Lectures 5–6 as DEEPEN after your REINFORCE works — first legitimate CS285 contact is l10-ppo" },
     equations: [
       "\\nabla_\\theta J = \\mathbb{E}\\big[\\textstyle\\sum_t \\nabla_\\theta \\log \\pi_\\theta(a_t\\mid s_t)\\, A_t\\big]",
       "A^{GAE(\\lambda)}_t = \\sum_{l} (\\gamma\\lambda)^l \\delta_{t+l},\\;\\; \\delta_t = r_t + \\gamma V(s_{t+1}) - V(s_t)",

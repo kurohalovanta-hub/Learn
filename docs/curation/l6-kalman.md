@@ -1,0 +1,45 @@
+# l6-kalman — Kalman Filter, From Scratch
+
+Concept: The Bayes filter specialized to linear-Gaussian systems: predict/update in matrix form; the Kalman gain as precision-weighted trust between prediction and measurement; innovation and its covariance; Q/R tuning; NEES/NIS consistency checking as the honest-filter test.
+Learner prerequisites: l6-bayes-filter (the loop), l6-state-space (F is just A; the plant model IS the motion model), l2-random-variables Gold (Gaussians, covariance). The product-of-Gaussians derivation needs completing-the-square comfort.
+What beginners commonly misunderstand: (1) Treating the KF as a magic smoother instead of literally the Bayes filter with Gaussian belief — predict spreads P, update shrinks it, same loop as the corridor. (2) The Kalman gain as a mysterious formula rather than precision weighting ("trust ∝ 1/variance") — the 1D Gaussian-product derivation kills this permanently. (3) Q and R as knobs to twiddle until plots look smooth — without NEES/NIS the learner cannot tell a lying filter from an honest one (overconfident filters LOOK great). (4) Expecting σ to shrink forever — steady-state P surprises everyone. (5) State-model mismatch (tracking a maneuvering target with a constant-velocity model) misread as "the KF doesn't work".
+
+Candidate videos:
+1. Control Bootcamp estimation segment (Full State Estimation → Data Fusion → LQG) — Steve Brunton — durations [unverified] — playlist https://www.youtube.com/playlist?list=PLMrJAkhIeNNR20Mz-VpzgfQs5zrYi085m (segment-group titles verified via community lecture repo github.com/CEN-Control-Systems-Lab/Controls-BootCamp: "Full State Estimation", "Data Fusion", "Data Fusion and LQG". Control-theoretic view — observability, estimator eigenvalues, duality with LQR. Valuable but a DIFFERENT axis than this node's Bayes-first build; scored: correctness 5, fit-to-node 3, time-eff 3 → DEEPEN, not core.)
+2. Cyrill Stachniss Kalman/EKF lecture — [unverified this session: site and YouTube egress-blocked, search budget exhausted before estimation sweeps] — fallback via repo's verified record https://www.ipb.uni-bonn.de/teaching/ (STUCK-PATH by cluster guidance.)
+3. — no further verifiable candidates this session. The node is implementation-first by curriculum decision; no core-watch gap results.
+
+Candidate written resources:
+1. Kalman and Bayesian Filters in Python, Ch 4–8 — Roger Labbe — https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python — notebooks [all filenames verified from repo listing this session]: 04-One-Dimensional-Kalman-Filters.ipynb, 05-Multivariate-Gaussians.ipynb, 06-Multivariate-Kalman-Filters.ipynb, 07-Kalman-Filter-Math.ipynb, 08-Designing-Kalman-Filters.ipynb. (THE selection: executable, exercise-bearing with answers, builds 1D→multivariate exactly along this node's objectives. 19.2k stars.)
+2. Same book, Ch 3 (03-Gaussians.ipynb) — conditional refresher only; the gaussian-explorer widget plus l2 Gold should make it skimmable in 15 min.
+3. nbviewer/binder access: http://nbviewer.ipython.org/github/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/table_of_contents.ipynb · https://beta.mybinder.org/v2/gh/rlabbe/Kalman-and-Bayesian-Filters-in-Python/master [both extracted from the README this session].
+4. FilterPy (pip install filterpy) — Labbe's companion library — role fixed by curriculum: TEST ORACLE ONLY, never the implementation (README role verified this session).
+5. Thrun, *Probabilistic Robotics*, Gaussian-filters chapter — derivation of record (repo reference; no URL claimed).
+
+Community evidence:
+- 19.2k GitHub stars, read off the repo this session — the community's default answer for learning Kalman filtering by building (https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python)
+- Labbe's README names the exact failure mode this curriculum fights: "Kalman filters have a reputation for difficulty" but the concepts are straightforward when presented clearly and interactively — his stated design goal (same URL)
+- Repo research phase independently selected it as PRIMARY with the from-scratch + oracle discipline (docs/research/reports/robotics-theory.md §5)
+
+Primary technical authority:
+- Thrun et al., *Probabilistic Robotics* (KF derivation of record); Labbe Ch 7 (Kalman-Filter-Math) for the bridge between intuition and that rigor; FilterPy as numerical oracle. The NEES/NIS chi-square methodology in Labbe Ch 8 is the consistency authority.
+
+Selected shortest-sufficient packet:
+- DIAGNOSTIC: kalman-1d widget cold, before any reading: run labs 1–5 (predict-only spread; single update snap; R↑ makes updates timid; Q↑ makes the filter lean on measurements; σ's steady rhythm) and answer the node diagnostic: what do K→0 / K→1 mean about sensor trust? Write the innovation and its covariance. 12 min.
+- ORIENT: — (the widget IS the orientation; no video needed).
+- CORE WATCH: — (implementation-first; Brunton estimation segment deliberately deferred to DEEPEN).
+- CORE READ: Labbe Ch 4 → 5 → 6 → 8, run-and-modified, every filter re-written by the learner in their own est.py as they go (Ch 3 only as 15-min skim if Gaussian algebra feels rusty; Ch 7 pulled in from DEEPEN when the "why" itches). ~4–5 h active — this is the node's core time block.
+- INTERACTIVE: gaussian-explorer (belief object: μ, σ, and why wide ≠ wrong) then kalman-1d (the full loop with K, Q, R live) — both already embedded in the in-app lesson.
+- PRACTICE: Node exercises — derive the 1D update as a product of two Gaussians (precision-weighted mean); mis-tune R by 100× both directions and show overconfident vs sluggish behavior in the NIS plot; Labbe's in-notebook exercises with commit-before-reveal.
+- IMPLEMENT/DERIVE: est.py: 2D constant-velocity tracker from noisy positions — predict/update from scratch, FilterPy assert-matched; NEES/NIS plots against chi-square bounds over Monte-Carlo runs (node implementation).
+- STUCK PATH: Labbe Ch 7 (Kalman-Filter-Math) for a slower, more explicit pass at the same equations; Stachniss lecture as alternate voice (fallback: repo's verified resource record https://www.ipb.uni-bonn.de/teaching/ — not re-verified this session).
+- DEEPEN: Control Bootcamp estimation segment (Full State Estimation → Data Fusion → LQG, playlist above) — the control-theoretic dual: observability, estimator poles, LQG = LQR + KF; watch after P9's estimator-in-the-loop work makes the question real. Thrun's derivation chapter for full rigor.
+- PROVE IT: Node mastery test — blank file → consistent 2D tracker (NEES within chi-square bounds over 100 Monte-Carlo runs) + the 1D Gaussian-product derivation on paper (Gold gate).
+- TRANSFER: Two-sensor fusion: add a second position sensor with 10× different R and a different rate to the same tracker; show the posterior beats either sensor alone and that the NIS stays honest — precision-weighting generalized beyond the textbook setting.
+- RETENTION: +14 days: cold-derive the Kalman gain from the product of two 1D Gaussians; state in one sentence each what Q and R encode and what NEES vs NIS each certify.
+
+Why this won: Labbe Ch 4–8 is the repo's verified primary and remains unbeaten for this learner: executable, from-scratch-compatible, exercise-bearing with answers, and its Ch 8 NEES/NIS methodology is precisely the node's "honest filter" objective — no video course teaches consistency checking at all. This session's improvements are granularity: exact notebook filenames/URLs per chapter, Ch 3 demoted to conditional skim (l2 Gold + gaussian-explorer cover it), Ch 7 repositioned as stuck-path/on-demand math, and the Brunton estimation segment explicitly parked in DEEPEN with its distinct (control-dual) value named — resolving the repo's ambiguity about where the bootcamp's "Kalman/LQG segment" belongs.
+What was rejected (and why): Brunton estimation videos as CORE WATCH (teach observability/LQG duality, not Bayes-first construction or consistency; wrong axis for this node, right axis for post-P9 deepening). Michel-van-Biezen-style multi-dozen-video KF playlists (unverifiable this session and antithetical to shortest-sufficient). Popular "KF in pictures" style explainers (could not be URL-verified this session — search budget exhausted; kalman-1d widget fills the same role interactively, which is strictly better). Thrun as core read (rigor-first ordering mismatches the learner; stays authority/DEEPEN).
+Risk of superficial understanding: Highest in the cluster: smooth plots convince learners they're done while the filter lies about its uncertainty. The gate is structural — mastery requires NEES within bounds over 100 Monte-Carlo runs, which overconfident or copy-pasted filters fail. Second trap: implementing from Labbe by transcription; the blank-file mastery rule exists for this.
+Required active work: kalman-1d cold labs; Ch 4–8 run-and-modify with own est.py growing alongside; 1D Gaussian-product derivation; R-mistune NIS study; 2D CV tracker with Monte-Carlo NEES/NIS; two-sensor fusion transfer.
+Last verified: 2026-08-21
