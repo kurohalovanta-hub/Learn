@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-client";
 import { startSync } from "@/lib/sync";
 import { researchModeActive } from "@/lib/engine/scheduler";
 import { dayOfProgram } from "@/lib/engine/pacing";
-import { currentRank, totalXp } from "@/lib/engine/mastery";
+import { currentRank } from "@/lib/engine/mastery";
 import { LoginGate } from "./LoginGate";
 import { MasteryMomentHost } from "./MasteryMoment";
 
@@ -207,7 +207,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 function Sidebar({ pathname, onSearch }: { pathname: string; onSearch: () => void }) {
   const store = useStore();
   const rank = currentRank(store.nodes);
-  const xp = totalXp(store.nodes);
+  const verifiedCount = Object.values(store.nodes).filter((p) => p.verified).length;
   const user = useAuth((s) => s.user);
 
   return (
@@ -239,7 +239,7 @@ function Sidebar({ pathname, onSearch }: { pathname: string; onSearch: () => voi
         </button>
         <div className="mono-label">rank {rank.index}</div>
         <div className="text-[13px] font-medium text-ink">{rank.title}</div>
-        <div className="mt-1 font-mono text-[11px] text-acc-math">{xp.toLocaleString()} XP</div>
+        <div className="mt-1 font-mono text-[11px] text-acc-robot">{verifiedCount} verified capabilit{verifiedCount === 1 ? "y" : "ies"}</div>
       </div>
     </aside>
   );
