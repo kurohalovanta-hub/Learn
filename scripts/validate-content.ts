@@ -209,6 +209,61 @@ async function validateLessons() {
   }
 }
 
+// ── learning packets (HANDOVERFINAL §8; rubric per recalibration Δ9) ──
+import { PACKET_META } from "../src/content/packets/manifest";
+import { PACKET_REGISTRY } from "../src/content/packets/registry";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+async function validatePackets() {
+  const seen = new Set<string>();
+  for (const meta of PACKET_META) {
+    if (seen.has(meta.nodeId)) errors.push(`packet manifest: duplicate ${meta.nodeId}`);
+    seen.add(meta.nodeId);
+    if (!nodeIds.has(meta.nodeId)) errors.push(`packet ${meta.nodeId}: no such node`);
+    const load = PACKET_REGISTRY[meta.nodeId];
+    if (!load) {
+      errors.push(`packet ${meta.nodeId}: missing registry entry`);
+      continue;
+    }
+    let p;
+    try {
+      p = (await load()).packet;
+    } catch (e) {
+      errors.push(`packet ${meta.nodeId}: failed to load (${(e as Error).message})`);
+      continue;
+    }
+    const where = `packet ${meta.nodeId}`;
+    if (p.nodeId !== meta.nodeId) errors.push(`${where}: nodeId mismatch (${p.nodeId})`);
+    if (p.minutes !== meta.minutes) errors.push(`${where}: manifest minutes ${meta.minutes} ≠ packet ${p.minutes}`);
+    if (!p.whyNow || p.whyNow.length < 40) errors.push(`${where}: whyNow missing/too thin`);
+    // Δ9: every packet must demand production, not just consumption
+    if (!p.practice || p.practice.length < 1) errors.push(`${where}: rubric — needs ≥1 practice item`);
+    if (!p.implement && !p.derive) errors.push(`${where}: rubric — needs implement or derive`);
+    if (!p.prove || p.prove.criteria.length < 1) errors.push(`${where}: rubric — prove-it with ≥1 criterion required`);
+    const node = NODE_MAP.get(meta.nodeId);
+    if (node && node.hours >= 8 && (!p.deepen || p.deepen.length === 0))
+      errors.push(`${where}: depth-flagged (${node.hours}h) — DEEPEN entry required (Δ9)`);
+    if (p.recall && (p.recall.length < 2 || p.recall.length > 6))
+      errors.push(`${where}: recall should be 2–6 items (found ${p.recall.length})`);
+    for (const [i, r] of (p.recall ?? []).entries()) if (!r.a) errors.push(`${where} recall[${i}]: missing answer`);
+    for (const w of p.interactiveIds ?? []) if (!widgetIdSet.has(w)) errors.push(`${where}: unknown widget "${w}"`);
+    if (p.lessonId && !LESSON_META.some((l) => l.nodeId === p.lessonId)) errors.push(`${where}: unknown lesson ${p.lessonId}`);
+    for (const m of [...(p.coreWatch ?? []), ...(p.orient ? [p.orient] : [])]) {
+      if (m.minutes <= 0 || m.minutes > 180) errors.push(`${where}: media "${m.title}" implausible minutes ${m.minutes}`);
+      if (!/^https?:\/\//.test(m.url)) errors.push(`${where}: media "${m.title}" bad url`);
+    }
+    for (const r of [...(p.coreRead ?? []), ...(p.deepen ?? [])]) {
+      if (r.resourceId && !resourceIds.has(r.resourceId)) errors.push(`${where}: unknown resource ${r.resourceId}`);
+    }
+    if (!existsSync(join(process.cwd(), p.researchRecord)))
+      errors.push(`${where}: research record ${p.researchRecord} not found`);
+  }
+  for (const id of Object.keys(PACKET_REGISTRY)) {
+    if (!PACKET_META.some((m) => m.nodeId === id)) errors.push(`packet registry: ${id} missing from manifest`);
+  }
+}
+
 // report
 const levelHours = new Map<number, number>();
 for (const n of NODES) {
@@ -218,7 +273,8 @@ const totalCore = [...levelHours.values()].reduce((a, b) => a + b, 0);
 
 (async () => {
   await validateLessons();
-  console.log(`content: ${NODES.length} nodes · ${RESOURCES.length} resources · ${PAPERS.length} papers · ${PROJECTS.length} projects · ${BOSSES.length} bosses · ${LESSON_META.length} lessons`);
+  await validatePackets();
+  console.log(`content: ${NODES.length} nodes · ${RESOURCES.length} resources · ${PAPERS.length} papers · ${PROJECTS.length} projects · ${BOSSES.length} bosses · ${LESSON_META.length} lessons · ${PACKET_META.length} packets`);
   console.log(`core hours by level: ${[...levelHours.entries()].sort((a, b) => a[0] - b[0]).map(([l, h]) => `L${l}:${h}`).join(" ")}`);
   console.log(`total core hours: ${totalCore}`);
   for (const w of warn) console.warn(`⚠ ${w}`);
