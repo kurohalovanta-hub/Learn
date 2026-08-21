@@ -25,7 +25,9 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (auth.status === "authed" && auth.user?.role === "admin") load();
+    if (auth.status !== "authed" || auth.user?.role !== "admin") return;
+    const t = setTimeout(load, 0);
+    return () => clearTimeout(t);
   }, [auth.status, auth.user?.role, load]);
 
   const act = async (username: string, action: string, extra?: Record<string, unknown>) => {

@@ -9,6 +9,7 @@ import { paperById } from "@/content/papers";
 import { projectById } from "@/content/projects";
 import { bossById } from "@/content/bosses";
 import { levelById } from "@/content/levels";
+import { hasLesson, lessonMeta } from "@/content/lessons/manifest";
 import { useStore } from "@/lib/store";
 import { nodeState, missingPrereqs, unlocks, DEFAULT_EDGE_TIER } from "@/lib/engine/graph";
 import { nodeXp } from "@/lib/engine/mastery";
@@ -49,9 +50,15 @@ export function NodeView({ id }: { id: string }) {
             {p && <span className="font-mono text-xs text-acc-math">{nodeXp(id, progress)} XP</span>}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {hasLesson(id) && (
+            <Link href={`/learn/${id}`} className="btn btn-acc" onClick={() => store.startNode(id)}>
+              ⚡ {store.lessons[id]?.completedAt ? "Reopen lesson" : store.lessons[id] ? "Continue lesson" : "Open lesson"}
+              <span className="font-mono text-[10px] opacity-70">{lessonMeta(id)?.minutes}m</span>
+            </Link>
+          )}
           {state !== "locked" && p?.status !== "mastered" && (
-            <button className="btn btn-acc" onClick={() => store.startNode(id)}>
+            <button className={`btn ${hasLesson(id) ? "" : "btn-acc"}`} onClick={() => store.startNode(id)}>
               {p?.status === "learning" ? "In progress" : "▶ Start"}
             </button>
           )}

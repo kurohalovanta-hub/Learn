@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type {
-  BossAttempt, DayPlan, DefenseResult, ExperimentRecord, Idea, Independence, LessonProgress,
+  BossAttempt, DayPlan, DefenseResult, ExperimentRecord, Idea, Independence,
   NodeProgress, PaperStatus, ProgressData, ProjectStatus, SessionLog, Settings, Tier, WeeklyReview,
 } from "@/lib/types";
 import { initialReview, nextReview, type ReviewOutcome } from "@/lib/engine/review";

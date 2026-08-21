@@ -82,7 +82,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hydrated && auth.status === "authed") startSync();
   }, [hydrated, auth.status]);
-  useEffect(() => setDrawerOpen(false), [pathname]);
+  // close the drawer when navigation changes the route (render-time adjustment)
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
+    setDrawerOpen(false);
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName)) {
