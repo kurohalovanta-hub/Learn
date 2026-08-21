@@ -3,14 +3,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type {
-  BossAttempt, ExperimentRecord, Idea, Independence, NodeProgress, PaperStatus,
-  ProgressData, ProjectStatus, SessionLog, Settings, Tier, WeeklyReview,
+  BossAttempt, DayPlan, DefenseResult, ExperimentRecord, Idea, Independence, LessonProgress,
+  NodeProgress, PaperStatus, ProgressData, ProjectStatus, SessionLog, Settings, Tier, WeeklyReview,
 } from "@/lib/types";
 import { initialReview, nextReview, type ReviewOutcome } from "@/lib/engine/review";
 import { NODE_MAP } from "@/content/nodes";
 import { tierAtLeast } from "@/lib/types";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const emptyData = (): ProgressData => ({
   schema: SCHEMA_VERSION,
@@ -23,11 +23,15 @@ const emptyData = (): ProgressData => ({
   ideas: [],
   bossAttempts: [],
   weeklies: {},
+  lessons: {},
+  dayPlans: {},
   settings: { dailyHoursTarget: 6, gpuTier: "24", updatedAt: 0 },
 });
 
 export interface StoreState extends ProgressData {
   hydrated: boolean;
+  /** Username this local cache belongs to (accounts mode); null = local-only. */
+  owner: string | null;
   lastSync?: { at: number; ok: boolean; message: string };
   // node actions
   startNode: (id: string) => void;
@@ -39,7 +43,13 @@ export interface StoreState extends ProgressData {
   deleteLog: (id: string) => void;
   // papers / projects
   setPaperStatus: (id: string, status: PaperStatus, notes?: string) => void;
+  recordDefense: (paperId: string, result: DefenseResult) => void;
   setProjectStatus: (id: string, status: ProjectStatus, notes?: string) => void;
+  // lessons + mission
+  setLessonPosition: (nodeId: string, section: number) => void;
+  gradeLessonCheck: (nodeId: string, checkId: string, result: "got" | "missed") => void;
+  completeLesson: (nodeId: string) => void;
+  toggleMissionStep: (date: string, stepId: string, done: boolean) => void;
   // experiments / ideas / bosses / weeklies
   upsertExperiment: (e: Partial<ExperimentRecord> & { id?: string }) => void;
   deleteExperiment: (id: string) => void;
@@ -49,6 +59,7 @@ export interface StoreState extends ProgressData {
   saveWeekly: (w: WeeklyReview) => void;
   // settings / data management
   updateSettings: (s: Partial<Settings>) => void;
+  setOwner: (owner: string | null) => void;
   importData: (data: ProgressData) => void;
   exportData: () => ProgressData;
   mergeRemote: (remote: ProgressData) => void;
@@ -65,6 +76,7 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       ...emptyData(),
       hydrated: false,
+      owner: null,
 
       startNode: (id) =>
         set((s) => {
@@ -134,7 +146,6 @@ export const useStore = create<StoreState>()(
               [id]: {
                 ...p,
                 review,
-                // failed retrieval demotes confidence, not the earned tier
                 confidence: demote ? (Math.max(1, (p.confidence ?? 3) - 1) as 1 | 2 | 3 | 4 | 5) : p.confidence,
                 updatedAt: now,
               },
@@ -153,13 +164,67 @@ export const useStore = create<StoreState>()(
       setPaperStatus: (id, status, notes) =>
         set((s) => ({
           ...touch(s),
-          papers: { ...s.papers, [id]: { status, notes: notes ?? s.papers[id]?.notes, updatedAt: Date.now() } },
+          papers: { ...s.papers, [id]: { ...s.papers[id], status, notes: notes ?? s.papers[id]?.notes, updatedAt: Date.now() } },
+        })),
+      recordDefense: (paperId, result) =>
+        set((s) => ({
+          ...touch(s),
+          papers: {
+            ...s.papers,
+            [paperId]: { ...(s.papers[paperId] ?? { status: "reading" as const }), defense: result, updatedAt: Date.now() },
+          },
         })),
       setProjectStatus: (id, status, notes) =>
         set((s) => ({
           ...touch(s),
           projects: { ...s.projects, [id]: { status, notes: notes ?? s.projects[id]?.notes, updatedAt: Date.now() } },
         })),
+
+      setLessonPosition: (nodeId, section) =>
+        set((s) => {
+          const prev = s.lessons[nodeId];
+          if (prev?.section === section) return s;
+          return {
+            ...touch(s),
+            lessons: {
+              ...s.lessons,
+              [nodeId]: { ...(prev ?? { checks: {} }), section, updatedAt: Date.now() },
+            },
+          };
+        }),
+      gradeLessonCheck: (nodeId, checkId, result) =>
+        set((s) => {
+          const prev = s.lessons[nodeId] ?? { section: 0, checks: {}, updatedAt: 0 };
+          return {
+            ...touch(s),
+            lessons: {
+              ...s.lessons,
+              [nodeId]: { ...prev, checks: { ...prev.checks, [checkId]: result }, updatedAt: Date.now() },
+            },
+          };
+        }),
+      completeLesson: (nodeId) =>
+        set((s) => {
+          const prev = s.lessons[nodeId] ?? { section: 0, checks: {}, updatedAt: 0 };
+          return {
+            ...touch(s),
+            lessons: {
+              ...s.lessons,
+              [nodeId]: { ...prev, completedAt: prev.completedAt ?? Date.now(), updatedAt: Date.now() },
+            },
+          };
+        }),
+      toggleMissionStep: (date, stepId, done) =>
+        set((s) => {
+          const prev: DayPlan = s.dayPlans[date] ?? { steps: {}, updatedAt: 0 };
+          return {
+            ...touch(s),
+            dayPlans: {
+              ...s.dayPlans,
+              [date]: { steps: { ...prev.steps, [stepId]: done }, updatedAt: Date.now() },
+            },
+          };
+        }),
 
       upsertExperiment: (e) =>
         set((s) => {
@@ -200,15 +265,18 @@ export const useStore = create<StoreState>()(
       updateSettings: (patch) =>
         set((s) => ({ ...touch(s), settings: { ...s.settings, ...patch, updatedAt: Date.now() } })),
 
+      setOwner: (owner) => set({ owner }),
+
       importData: (data) =>
-        set((s) => ({ ...migrate(data), hydrated: s.hydrated, rev: Math.max(s.rev, data.rev ?? 0) + 1 })),
+        set((s) => ({ ...migrate(data), hydrated: s.hydrated, owner: s.owner, rev: Math.max(s.rev, data.rev ?? 0) + 1 })),
 
       exportData: () => {
         const s = get();
         return {
           schema: s.schema, rev: s.rev, nodes: s.nodes, logs: s.logs, papers: s.papers,
           projects: s.projects, experiments: s.experiments, ideas: s.ideas,
-          bossAttempts: s.bossAttempts, weeklies: s.weeklies, settings: s.settings,
+          bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
+          dayPlans: s.dayPlans, settings: s.settings,
         };
       },
 
@@ -238,6 +306,8 @@ export const useStore = create<StoreState>()(
             papers: mergeMap(s.papers, r.papers),
             projects: mergeMap(s.projects, r.projects),
             weeklies: mergeMap(s.weeklies, r.weeklies),
+            lessons: mergeMap(s.lessons, r.lessons),
+            dayPlans: mergeMap(s.dayPlans, r.dayPlans),
             logs: mergeList(s.logs, r.logs),
             experiments: mergeList(s.experiments, r.experiments),
             ideas: mergeList(s.ideas, r.ideas),
@@ -247,7 +317,7 @@ export const useStore = create<StoreState>()(
         }),
 
       setLastSync: (lastSync) => set({ lastSync }),
-      resetAll: () => set((s) => ({ ...emptyData(), hydrated: s.hydrated, rev: s.rev + 1 })),
+      resetAll: () => set((s) => ({ ...emptyData(), hydrated: s.hydrated, owner: s.owner, rev: s.rev + 1 })),
       _setHydrated: () => set({ hydrated: true }),
     }),
     {
@@ -255,10 +325,16 @@ export const useStore = create<StoreState>()(
       version: SCHEMA_VERSION,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
+      migrate: (persisted) => {
+        // v1 → v2: new maps default to empty; owner defaults to null
+        const p = (persisted ?? {}) as Partial<StoreState>;
+        return { ...p, lessons: p.lessons ?? {}, dayPlans: p.dayPlans ?? {}, owner: p.owner ?? null } as StoreState;
+      },
       partialize: (s) => ({
-        schema: s.schema, rev: s.rev, nodes: s.nodes, logs: s.logs, papers: s.papers,
-        projects: s.projects, experiments: s.experiments, ideas: s.ideas,
-        bossAttempts: s.bossAttempts, weeklies: s.weeklies, settings: s.settings,
+        schema: SCHEMA_VERSION, rev: s.rev, owner: s.owner, nodes: s.nodes, logs: s.logs,
+        papers: s.papers, projects: s.projects, experiments: s.experiments, ideas: s.ideas,
+        bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
+        dayPlans: s.dayPlans, settings: s.settings,
       }),
       onRehydrateStorage: () => (state) => state?._setHydrated(),
     },
@@ -267,5 +343,12 @@ export const useStore = create<StoreState>()(
 
 export function migrate(data: ProgressData): ProgressData {
   const base = emptyData();
-  return { ...base, ...data, schema: SCHEMA_VERSION, settings: { ...base.settings, ...data.settings } };
+  return {
+    ...base,
+    ...data,
+    schema: SCHEMA_VERSION,
+    lessons: data.lessons ?? {},
+    dayPlans: data.dayPlans ?? {},
+    settings: { ...base.settings, ...data.settings },
+  };
 }

@@ -1,77 +1,88 @@
 "use client";
 
 import { useStore } from "./store";
+import { useAuth } from "./auth-client";
 import type { ProgressData } from "./types";
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let started = false;
 
-async function call(method: "GET" | "PUT", secret: string, body?: ProgressData) {
-  const res = await fetch("/api/sync", {
+async function call(method: "GET" | "PUT", body?: ProgressData) {
+  const res = await fetch("/api/progress", {
     method,
-    headers: {
-      "x-sync-secret": secret,
-      ...(body ? { "content-type": "application/json" } : {}),
-    },
+    headers: body ? { "content-type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 501) throw new Error("Sync not configured on the server (see README → Deploy).");
-  if (res.status === 401) throw new Error("Sync secret rejected.");
-  if (!res.ok) throw new Error(`Sync failed: HTTP ${res.status}`);
+  if (res.status === 501) throw new Error("Accounts not configured on the server.");
+  if (res.status === 401) {
+    // session expired mid-use — surface via auth state
+    useAuth.getState().refresh();
+    throw new Error("Session expired — sign in again.");
+  }
+  if (!res.ok && res.status !== 204) throw new Error(`Sync failed: HTTP ${res.status}`);
   return res;
 }
 
 export async function pullAndMerge(): Promise<string> {
-  const s = useStore.getState();
-  const secret = s.settings.syncSecret;
-  if (!secret) return "No sync secret set.";
-  const res = await call("GET", secret);
-  if (res.status === 204) return "No remote data yet.";
+  const res = await call("GET");
+  if (res.status === 204) return "No cloud data yet.";
   const remote = (await res.json()) as ProgressData | null;
   if (remote && typeof remote === "object" && remote.nodes) {
     useStore.getState().mergeRemote(remote);
-    return "Merged remote progress.";
+    return "Merged cloud progress.";
   }
-  return "No remote data yet.";
+  return "No cloud data yet.";
 }
 
 export async function pushNow(): Promise<string> {
-  const s = useStore.getState();
-  const secret = s.settings.syncSecret;
-  if (!secret) return "No sync secret set.";
-  await call("PUT", secret, s.exportData());
-  return "Pushed.";
+  await call("PUT", useStore.getState().exportData());
+  return "Saved to cloud.";
 }
 
 function schedulePush() {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
     try {
-      const msg = await pushNow();
-      if (msg === "Pushed.") useStore.getState().setLastSync({ at: Date.now(), ok: true, message: "Synced" });
+      await pushNow();
+      useStore.getState().setLastSync({ at: Date.now(), ok: true, message: "Synced" });
     } catch (e) {
       useStore.getState().setLastSync({ at: Date.now(), ok: false, message: (e as Error).message });
     }
-  }, 4000);
+  }, 3500);
 }
 
-/** Start background sync: pull-merge on load/focus, debounced push on change. Idempotent. */
+/**
+ * Start per-user sync once authenticated. Handles the owner contract:
+ * the local cache belongs to one username; a different login resets it
+ * before pulling that user's cloud copy.
+ */
 export function startSync() {
   if (started || typeof window === "undefined") return;
+  const auth = useAuth.getState();
+  if (auth.status !== "authed" || !auth.user) return;
   started = true;
+  const username = auth.user.username;
+
+  const store = useStore.getState();
+  if (store.owner && store.owner !== username) {
+    store.resetAll();
+  }
+  useStore.getState().setOwner(username);
 
   const tryPull = async () => {
-    const s = useStore.getState();
-    if (!s.settings.syncSecret) return;
+    if (useAuth.getState().status !== "authed") return;
     try {
       const msg = await pullAndMerge();
-      s.setLastSync({ at: Date.now(), ok: true, message: msg });
+      useStore.getState().setLastSync({ at: Date.now(), ok: true, message: msg });
     } catch (e) {
-      s.setLastSync({ at: Date.now(), ok: false, message: (e as Error).message });
+      useStore.getState().setLastSync({ at: Date.now(), ok: false, message: (e as Error).message });
     }
   };
 
-  tryPull();
+  tryPull().then(() => {
+    // ensure the server has a copy even on a fresh account
+    schedulePush();
+  });
   window.addEventListener("focus", tryPull);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") tryPull();
@@ -81,14 +92,19 @@ export function startSync() {
   useStore.subscribe((state) => {
     if (state.rev !== lastRev) {
       lastRev = state.rev;
-      if (state.settings.syncSecret) schedulePush();
+      if (useAuth.getState().status === "authed") schedulePush();
     }
   });
 
-  // best-effort durable storage
   try {
     navigator.storage?.persist?.();
   } catch {
     /* ignore */
   }
+}
+
+/** Allow a re-arm after logout→login as a different user. */
+export function resetSyncLifecycle() {
+  started = false;
+  if (pushTimer) clearTimeout(pushTimer);
 }

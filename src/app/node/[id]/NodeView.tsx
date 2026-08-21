@@ -13,6 +13,7 @@ import { useStore } from "@/lib/store";
 import { nodeState, missingPrereqs, unlocks, DEFAULT_EDGE_TIER } from "@/lib/engine/graph";
 import { nodeXp } from "@/lib/engine/mastery";
 import { Katex, NodePill, Panel, SectionTitle, StateBadge, TierBadge, TIER_COLORS } from "@/components/ui";
+import { claimWithMoment } from "@/components/MasteryMoment";
 import { TIERS, tierAtLeast, type Independence, type ResourceBinding, type Tier } from "@/lib/types";
 
 export function NodeView({ id }: { id: string }) {
@@ -328,7 +329,7 @@ function MasteryPanel({ id, locked }: { id: string; locked: boolean }) {
             <button
               key={t}
               disabled={locked || blockedByIndep}
-              onClick={() => store.claimTier(id, t, evidence || undefined, indep)}
+              onClick={() => claimWithMoment(id, t, evidence || undefined, indep)}
               className="btn disabled:cursor-not-allowed disabled:opacity-35"
               style={current ? { borderColor: TIER_COLORS[t], color: TIER_COLORS[t] } : isGate ? { borderColor: `${TIER_COLORS[t]}88` } : undefined}
               title={isGate ? "The gate tier for this node" : undefined}
@@ -376,7 +377,7 @@ function BossAttemptBox({ bossId }: { bossId: string }) {
           onClick={() => {
             store.recordBossAttempt({ bossId, date: new Date().toISOString().slice(0, 10), passed: true, notes });
             const node = NODE_MAP.get(bossId)!;
-            store.claimTier(bossId, node.masteryGate, notes || "boss passed");
+            claimWithMoment(bossId, node.masteryGate, notes || "boss passed");
             setNotes("");
           }}
         >

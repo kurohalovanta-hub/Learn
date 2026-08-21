@@ -257,9 +257,32 @@ export type PaperStatus =
   | "modified"
   | "research-lead";
 
+export interface DefenseResult {
+  date: string;
+  score: number;
+  total: number;
+  verdict: "defended" | "partial" | "undefended";
+}
+
 export interface PaperProgress {
   status: PaperStatus;
   notes?: string;
+  defense?: DefenseResult;
+  updatedAt: number;
+}
+
+/** Position + retrieval results inside an in-app lesson. */
+export interface LessonProgress {
+  section: number;
+  /** checkId -> honest self-grade. Missed items are review fuel, not shame. */
+  checks: Record<string, "got" | "missed">;
+  completedAt?: number;
+  updatedAt: number;
+}
+
+/** Per-day mission step completion (YYYY-MM-DD -> stepId -> done). */
+export interface DayPlan {
+  steps: Record<string, boolean>;
   updatedAt: number;
 }
 
@@ -340,6 +363,8 @@ export interface ProgressData {
   ideas: Idea[];
   bossAttempts: BossAttempt[];
   weeklies: Record<string, WeeklyReview>;
+  lessons: Record<string, LessonProgress>;
+  dayPlans: Record<string, DayPlan>;
   settings: Settings;
 }
 

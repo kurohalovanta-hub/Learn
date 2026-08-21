@@ -1,15 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { useStore, migrate } from "@/lib/store";
-import { pullAndMerge, pushNow } from "@/lib/sync";
+import { useAuth } from "@/lib/auth-client";
+import { pullAndMerge, pushNow, resetSyncLifecycle } from "@/lib/sync";
 import { Panel, SectionTitle } from "@/components/ui";
 import type { ProgressData } from "@/lib/types";
 
 export default function SettingsPage() {
   const store = useStore();
+  const auth = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [syncMsg, setSyncMsg] = useState("");
+  const [msg, setMsg] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
 
   const exportJson = () => {
@@ -28,9 +31,9 @@ export default function SettingsPage() {
         const data = JSON.parse(String(reader.result)) as ProgressData;
         if (!data || typeof data !== "object" || !data.nodes) throw new Error("not a progress export");
         store.importData(migrate(data));
-        setSyncMsg("Import complete.");
+        setMsg("Import complete.");
       } catch (e) {
-        setSyncMsg(`Import failed: ${(e as Error).message}`);
+        setMsg(`Import failed: ${(e as Error).message}`);
       }
     };
     reader.readAsText(file);
@@ -43,6 +46,80 @@ export default function SettingsPage() {
         <h1 className="font-mono text-2xl font-bold">SETTINGS</h1>
       </div>
 
+      {/* account */}
+      <Panel accent="#4dd6e8">
+        <SectionTitle>account & sync</SectionTitle>
+        {auth.status === "authed" && auth.user ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-sm text-ink">@{auth.user.username}</span>
+              <span
+                className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase"
+                style={{
+                  color: auth.user.role === "admin" ? "#e8b34d" : "#8b97a7",
+                  background: auth.user.role === "admin" ? "#e8b34d14" : "#8b97a714",
+                }}
+              >
+                {auth.user.role}
+              </span>
+              {store.lastSync && (
+                <span className={`text-xs ${store.lastSync.ok ? "text-acc-robot" : "text-acc-frontier"}`}>
+                  {store.lastSync.message} · {new Date(store.lastSync.at).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-dim">
+              Progress saves to your account automatically (a few seconds after each change) and follows you
+              across devices — sign in anywhere with the same username.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="btn"
+                onClick={async () => {
+                  try { setMsg(await pullAndMerge()); } catch (e) { setMsg((e as Error).message); }
+                }}
+              >
+                ↓ Pull & merge
+              </button>
+              <button
+                className="btn"
+                onClick={async () => {
+                  try { setMsg(await pushNow()); } catch (e) { setMsg((e as Error).message); }
+                }}
+              >
+                ↑ Push now
+              </button>
+              {auth.user.role === "admin" && (
+                <Link href="/admin" className="btn">⛨ Manage users</Link>
+              )}
+              <button
+                className="btn btn-danger"
+                onClick={async () => {
+                  await auth.logout();
+                  resetSyncLifecycle();
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-dim">
+              <b className="text-ink">Local mode.</b> This deployment has no account backend, so progress lives
+              in this browser only (plus your JSON exports below).
+            </p>
+            <p className="text-xs text-faint">
+              To enable accounts + cross-device sync: in Vercel open <b>Storage → Create Database → Upstash for
+              Redis</b>, link it to the project, redeploy (~3 minutes). The first account registered becomes the
+              administrator; later registrations wait for approval. Full steps in the README.
+            </p>
+          </div>
+        )}
+        {msg && <div className="mt-2 text-xs text-dim">{msg}</div>}
+      </Panel>
+
+      {/* program */}
       <Panel>
         <SectionTitle>program</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -96,37 +173,7 @@ export default function SettingsPage() {
         </div>
       </Panel>
 
-      <Panel accent="#4dd6e8">
-        <SectionTitle>cross-device sync (optional)</SectionTitle>
-        <p className="text-xs text-dim">
-          Local-first: everything lives in this browser and in your JSON exports. To sync across devices,
-          deploy with the Upstash Redis integration + a <code className="font-mono text-acc">SYNC_SECRET</code> env
-          var (README → Deploy), then paste that same secret here on each device.
-        </p>
-        <div className="mt-2 flex gap-2">
-          <input
-            type="password"
-            placeholder="SYNC_SECRET"
-            value={store.settings.syncSecret ?? ""}
-            onChange={(e) => store.updateSettings({ syncSecret: e.target.value || undefined })}
-          />
-        </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button className="btn" onClick={async () => { try { setSyncMsg(await pullAndMerge()); } catch (e) { setSyncMsg((e as Error).message); } }}>
-            ↓ Pull & merge
-          </button>
-          <button className="btn" onClick={async () => { try { setSyncMsg(await pushNow()); } catch (e) { setSyncMsg((e as Error).message); } }}>
-            ↑ Push now
-          </button>
-          {store.lastSync && (
-            <span className={`self-center text-xs ${store.lastSync.ok ? "text-acc-robot" : "text-acc-frontier"}`}>
-              {store.lastSync.message} · {new Date(store.lastSync.at).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        {syncMsg && <div className="mt-2 text-xs text-dim">{syncMsg}</div>}
-      </Panel>
-
+      {/* backup */}
       <Panel>
         <SectionTitle>backup / restore</SectionTitle>
         <div className="flex flex-wrap gap-2">
@@ -134,9 +181,10 @@ export default function SettingsPage() {
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import (merge-replace)</button>
           <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
         </div>
-        <p className="mt-2 text-xs text-faint">Export weekly. Browsers evict storage; the JSON file and the sync copy are your durable truth.</p>
+        <p className="mt-2 text-xs text-faint">Export weekly regardless of sync — a file you hold beats every cloud.</p>
       </Panel>
 
+      {/* danger */}
       <Panel accent="#f4586e">
         <SectionTitle>danger zone</SectionTitle>
         {!confirmReset ? (
