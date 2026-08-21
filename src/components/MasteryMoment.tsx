@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { useStore } from "@/lib/store";
 import { masteryDelta, type MasteryDelta } from "@/lib/engine/delta";
-import type { Independence, Tier } from "@/lib/types";
+import { bingeSignal } from "@/lib/engine/competency";
+import type { IndependenceLevel } from "@/lib/types";
 import { TIER_COLORS } from "./ui";
 
 interface MomentState {
@@ -20,21 +21,41 @@ export const useMasteryMoment = create<MomentState>((set) => ({
   dismiss: () => set({ delta: null }),
 }));
 
+export interface AssessmentResult {
+  delta: MasteryDelta | null;
+  /** Gate reached but not yet verified — caller should show the quiet inline note. */
+  provisional: boolean;
+  verified: boolean;
+}
+
 /**
- * The one true way to claim a tier from UI: snapshots progress, claims,
- * and raises the mastery moment only when a gate was genuinely crossed.
+ * The one way to record a prove-it/diagnostic from UI (HANDOVERFINAL §26).
+ * Appends assessment evidence; state is derived. The full-screen moment fires
+ * ONLY on transition into independently-verified (§28: reward follows
+ * verification, not the click) — and never while the binge signal is active.
  */
-export function claimWithMoment(
-  id: string,
-  tier: Tier,
-  evidence?: string,
-  independence?: Independence,
-) {
+export function assessWithMoment(
+  nodeId: string,
+  a: { attempt: string; passed: boolean; independence: IndependenceLevel; diagnostic?: boolean; note?: string },
+): AssessmentResult {
   const before = useStore.getState().nodes;
-  useStore.getState().claimTier(id, tier, evidence, independence);
-  const after = useStore.getState().nodes;
-  const delta = masteryDelta(id, before, after);
-  if (delta) useMasteryMoment.getState().show(delta);
+  useStore.getState().recordAssessment(nodeId, a);
+  const s = useStore.getState();
+  const after = s.nodes;
+  const delta = masteryDelta(nodeId, before, after);
+  const p = after[nodeId];
+  const binge = bingeSignal(s.events).active;
+  if (delta?.becameVerified && !binge) useMasteryMoment.getState().show(delta);
+  return { delta, provisional: !!p?.provisional, verified: !!p?.verified };
+}
+
+/** Retention/review path: fires the moment when a review pass completes verification. */
+export function reviewWithMoment(nodeId: string, outcome: "failed" | "hard" | "good" | "easy", sketch?: string) {
+  const before = useStore.getState().nodes;
+  useStore.getState().reviewNode(nodeId, outcome, sketch);
+  const s = useStore.getState();
+  const delta = masteryDelta(nodeId, before, s.nodes);
+  if (delta?.becameVerified && !bingeSignal(s.events).active) useMasteryMoment.getState().show(delta);
   return delta;
 }
 
@@ -63,22 +84,23 @@ export function MasteryMomentHost() {
     >
       <div
         className="scale-in w-full max-w-md overflow-hidden rounded-xl border bg-panel"
-        style={{ borderColor: `${tierColor}55`, boxShadow: `0 0 80px ${tierColor}22` }}
+        style={{ borderColor: `${tierColor}55` }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-line px-6 pt-6 pb-5 text-center">
+        <div className="border-b border-line px-6 pt-6 pb-5">
           <div className="mono-label" style={{ color: tierColor }}>
-            {delta.tier} · +{delta.xpGained} xp
+            verified · {delta.tier}
           </div>
-          <h2 className="mt-2 font-mono text-xl font-bold tracking-tight text-white">
-            {delta.title.toUpperCase()}
+          <h2 className="mt-2 font-mono text-lg font-bold tracking-tight text-white">
+            {delta.title}
           </h2>
-          <div className="mt-1 font-mono text-[13px] tracking-[0.3em]" style={{ color: tierColor }}>
-            — MASTERED —
-          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-dim">
+            <span className="text-faint">You can now: </span>
+            <span className="text-ink">{delta.capability}</span>
+          </p>
           {rankUp && (
             <div className="mt-3 rounded-md border border-acc-math/40 bg-acc-math/10 px-3 py-2 text-[13px] text-acc-math">
-              RANK {delta.rankAfter.index} — {delta.rankAfter.title}
+              Rank {delta.rankAfter.index} — {delta.rankAfter.title}
             </div>
           )}
         </div>

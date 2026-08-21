@@ -17,6 +17,10 @@ export interface MasteryDelta {
   rankBefore: RankDef;
   rankAfter: RankDef;
   crossedGate: boolean;
+  /** Capability sentence — what the learner can now do (the node's mastery test). */
+  capability: string;
+  /** True when this transition is INTO independently-verified (celebration-worthy). */
+  becameVerified: boolean;
 }
 
 const paperReady = (p: Paper, progress: Record<string, NodeProgress>) =>
@@ -43,7 +47,8 @@ export function masteryDelta(
   const wasComplete = isNodeComplete(node, before);
   const nowComplete = isNodeComplete(node, after);
   const crossedGate = !wasComplete && nowComplete;
-  if (!crossedGate) return null;
+  const becameVerified = !before[nodeId]?.verified && !!after[nodeId]?.verified;
+  if (!crossedGate && !becameVerified) return null;
 
   const unlockedNodes = [...NODE_MAP.values()].filter(
     (n) => n.id !== nodeId && !prereqsSatisfied(n, before) && prereqsSatisfied(n, after) && !isNodeComplete(n, after),
@@ -62,5 +67,7 @@ export function masteryDelta(
     rankBefore: currentRank(before),
     rankAfter: currentRank(after),
     crossedGate,
+    capability: node.masteryTest,
+    becameVerified,
   };
 }

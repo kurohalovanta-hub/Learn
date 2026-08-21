@@ -55,12 +55,11 @@ export function DefenseRunner({ paperId }: { paperId: string }) {
     if (idx + 1 >= total) {
       const s = g.filter(Boolean).length;
       const verdict = s / total >= 0.8 ? "defended" : s / total >= 0.5 ? "partial" : "undefended";
-      recordDefense(paperId, {
-        date: new Date().toISOString().slice(0, 10),
-        score: s,
-        total,
-        verdict,
-      });
+      recordDefense(
+        paperId,
+        { date: new Date().toISOString().slice(0, 10), score: s, total, verdict },
+        p.prereqNodeIds, // a defended paper is integration evidence for its prerequisite nodes
+      );
       setPhase("done");
     } else {
       setIdx(idx + 1);

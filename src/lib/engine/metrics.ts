@@ -2,6 +2,7 @@ import { NODE_MAP } from "@/content/nodes";
 import { PAPERS } from "@/content/papers";
 import type { ProgressData, SessionLog } from "@/lib/types";
 import { reviewQueue } from "./review";
+import { bingeSignal } from "./competency";
 import { pacingStatus, DESCOPE_LEVERS } from "./pacing";
 
 const DAY = 86_400_000;
@@ -70,6 +71,15 @@ export function warnings(data: ProgressData, now = Date.now()): Warning[] {
     out.push({ id: "no-creation", severity: "alert", title: "Zero creation this week", detail: "Nothing implemented or built in 7 days. Stop consuming; open the editor." });
   }
 
+  // Binge pattern (Δ6): gate assessments outrunning actual work
+  const binge = bingeSignal(data.events ?? [], now);
+  if (binge.active) {
+    out.push({
+      id: "binge", severity: "alert", title: `${binge.nodesClaimed24h} gates claimed in 24h on ${Math.round(binge.workMinutes24h / 60)}h of recorded work`,
+      detail: `Those nodes declare ~${binge.declaredHours}h of material. Claims stay provisional until reviews pass — celebrations are paused, and the 2-day retention audits will tell the truth. Slow down and work one bottleneck.`,
+    });
+  }
+
   // AI dependency
   const rated = recent14.filter((l) => l.independence);
   const heavy = rated.filter((l) => l.independence === "heavy_ai" || l.independence === "copied").length;
@@ -134,6 +144,10 @@ export interface DashboardStats {
   experimentsDone: number;
   nodesMastered: number;
   goldPlus: number;
+  /** Nodes at gate AND independently verified (assessment + later retention/transfer). */
+  verifiedCount: number;
+  /** At gate but awaiting verification (incl. legacy claims). */
+  provisionalCount: number;
 }
 
 export function dashboardStats(data: ProgressData, now = Date.now()): DashboardStats {
@@ -148,5 +162,7 @@ export function dashboardStats(data: ProgressData, now = Date.now()): DashboardS
     experimentsDone: data.experiments.filter((e) => e.status === "done" || e.status === "negative").length,
     nodesMastered: mastered.length,
     goldPlus: mastered.filter((p) => ["gold", "platinum", "research"].includes(p.tier)).length,
+    verifiedCount: mastered.filter((p) => p.verified).length,
+    provisionalCount: mastered.filter((p) => p.provisional).length,
   };
 }

@@ -3,19 +3,23 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type {
-  BossAttempt, DayPlan, DefenseResult, ExperimentRecord, Idea, Independence,
-  NodeProgress, PaperStatus, ProgressData, ProjectStatus, SessionLog, Settings, Tier, WeeklyReview,
+  BossAttempt, DayPlan, DefenseResult, EvidenceRecord, ExperimentRecord, Idea, Independence,
+  IndependenceLevel, NodeProgress, PaperStatus, ProgressData, ProjectStatus, SessionLog,
+  Settings, Tier, WeeklyReview,
 } from "@/lib/types";
 import { initialReview, nextReview, type ReviewOutcome } from "@/lib/engine/review";
-import { NODE_MAP } from "@/content/nodes";
-import { tierAtLeast } from "@/lib/types";
+import { deriveNode } from "@/lib/engine/competency";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+/** Client-side event-log cap; oldest info-only events are dropped first past this. */
+const EVENT_CAP = 8000;
 
 const emptyData = (): ProgressData => ({
   schema: SCHEMA_VERSION,
   rev: 0,
   nodes: {},
+  events: [],
   logs: [],
   papers: {},
   projects: {},
@@ -28,22 +32,34 @@ const emptyData = (): ProgressData => ({
   settings: { dailyHoursTarget: 6, gpuTier: "24", updatedAt: 0 },
 });
 
+export type NewEvidence = Omit<EvidenceRecord, "id" | "at"> & { at?: number };
+
 export interface StoreState extends ProgressData {
   hydrated: boolean;
   /** Username this local cache belongs to (accounts mode); null = local-only. */
   owner: string | null;
   lastSync?: { at: number; ok: boolean; message: string };
-  // node actions
+  // node actions — evidence only; tier/status are DERIVED (HANDOVERFINAL §26)
   startNode: (id: string) => void;
-  claimTier: (id: string, tier: Tier, evidence?: string, independence?: Independence, confidence?: 1 | 2 | 3 | 4 | 5) => void;
+  recordEvidence: (ev: NewEvidence) => EvidenceRecord;
+  /** The PROVE-IT / diagnostic path: typed attempt + self-verdict + explicit independence. */
+  recordAssessment: (nodeId: string, a: {
+    attempt: string;
+    passed: boolean;
+    independence: IndependenceLevel;
+    diagnostic?: boolean;
+    note?: string;
+  }) => void;
+  /** Legacy/admin only — always rendered as an unverified override. */
+  recordManualOverride: (id: string, tier: Tier, note?: string) => void;
   resetNode: (id: string) => void;
-  reviewNode: (id: string, outcome: ReviewOutcome) => void;
+  reviewNode: (id: string, outcome: ReviewOutcome, sketch?: string) => void;
   // logs
   addLog: (log: Omit<SessionLog, "id" | "updatedAt">) => void;
   deleteLog: (id: string) => void;
   // papers / projects
   setPaperStatus: (id: string, status: PaperStatus, notes?: string) => void;
-  recordDefense: (paperId: string, result: DefenseResult) => void;
+  recordDefense: (paperId: string, result: DefenseResult, nodeIds?: string[]) => void;
   setProjectStatus: (id: string, status: ProjectStatus, notes?: string) => void;
   // lessons + mission
   setLessonPosition: (nodeId: string, section: number) => void;
@@ -70,6 +86,48 @@ export interface StoreState extends ProgressData {
 
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 const touch = (s: { rev: number }) => ({ rev: s.rev + 1 });
+
+/** Re-derive one node's cached progress from the event log, preserving live-state fields. */
+function recomputeNode(
+  nodes: Record<string, NodeProgress>,
+  events: EvidenceRecord[],
+  id: string,
+  now: number,
+): Record<string, NodeProgress> {
+  const d = deriveNode(id, events);
+  const prev = nodes[id];
+  const next = { ...nodes };
+  if (d.status === "not_started" && !prev?.review) {
+    delete next[id];
+    return next;
+  }
+  next[id] = {
+    status: d.status,
+    tier: d.tier,
+    confidence: d.confidence,
+    independence: prev?.independence,
+    evidence: prev?.evidence,
+    startedAt: prev?.startedAt ?? d.startedAt,
+    masteredAt: d.masteredAt ?? prev?.masteredAt,
+    review: prev?.review,
+    verified: d.verified,
+    provisional: d.provisional,
+    legacy: d.legacy,
+    semantic: d.semantic,
+    updatedAt: now,
+  };
+  return next;
+}
+
+function capEvents(events: EvidenceRecord[]): EvidenceRecord[] {
+  if (events.length <= EVENT_CAP) return events;
+  // drop oldest info-only events first, then oldest overall
+  const info = events.filter((e) => e.outcome === "info");
+  const drop = new Set(info.slice(0, events.length - EVENT_CAP).map((e) => e.id));
+  let out = events.filter((e) => !drop.has(e.id));
+  if (out.length > EVENT_CAP) out = out.slice(out.length - EVENT_CAP);
+  return out;
+}
 
 export const useStore = create<StoreState>()(
   persist(
@@ -99,58 +157,72 @@ export const useStore = create<StoreState>()(
           };
         }),
 
-      claimTier: (id, tier, evidence, independence, confidence) =>
+      recordEvidence: (ev) => {
+        const rec: EvidenceRecord = { ...ev, id: uid(), at: ev.at ?? Date.now() };
         set((s) => {
-          const node = NODE_MAP.get(id);
-          const prev = s.nodes[id];
-          const mastered = node ? tierAtLeast(tier, node.masteryGate) : tier !== "none";
+          const events = capEvents([...s.events, rec]);
           const now = Date.now();
+          let nodes = recomputeNode(s.nodes, events, rec.nodeId, now);
+          // assessment pass ⇒ schedule the early retention audit (Δ5): due ≤ now + 2d
+          if (rec.kind === "assessment" && rec.outcome === "pass") {
+            const p = nodes[rec.nodeId];
+            if (p) {
+              const early = now + 2 * 24 * 3600 * 1000;
+              const review = p.review && p.review.due < early ? p.review : { ...(p.review ?? initialReview(now)), due: early };
+              nodes = { ...nodes, [rec.nodeId]: { ...p, review, updatedAt: now } };
+            }
+          }
           return {
             ...touch(s),
             settings: s.settings.startDate ? s.settings : { ...s.settings, startDate: new Date().toISOString().slice(0, 10), updatedAt: now },
-            nodes: {
-              ...s.nodes,
-              [id]: {
-                status: mastered ? "mastered" : "learning",
-                tier,
-                evidence: evidence ?? prev?.evidence,
-                independence: independence ?? prev?.independence,
-                confidence: confidence ?? prev?.confidence,
-                startedAt: prev?.startedAt ?? now,
-                masteredAt: mastered ? (prev?.masteredAt ?? now) : prev?.masteredAt,
-                review: mastered ? (prev?.review ?? initialReview(now)) : prev?.review,
-                updatedAt: now,
-              },
-            },
+            events,
+            nodes,
           };
-        }),
+        });
+        return rec;
+      },
+
+      recordAssessment: (nodeId, a) => {
+        get().recordEvidence({
+          nodeId,
+          kind: "assessment",
+          outcome: a.passed ? "pass" : "fail",
+          independence: a.independence,
+          attempt: a.attempt,
+          note: a.diagnostic ? `diagnostic${a.note ? ` · ${a.note}` : ""}` : a.note,
+        });
+      },
+
+      recordManualOverride: (id, tier, note) => {
+        get().recordEvidence({ nodeId: id, kind: "manual-override", outcome: "info", tier, note });
+      },
 
       resetNode: (id) =>
         set((s) => {
+          // reset = boundary event; history is kept, derivation restarts after it
+          const rec: EvidenceRecord = { id: uid(), nodeId: id, kind: "manual-override", outcome: "info", tier: "none", note: "reset", at: Date.now() };
+          const events = capEvents([...s.events, rec]);
           const nodes = { ...s.nodes };
           delete nodes[id];
-          return { ...touch(s), nodes };
+          return { ...touch(s), events, nodes };
         }),
 
-      reviewNode: (id, outcome) =>
+      reviewNode: (id, outcome, sketch) =>
         set((s) => {
           const p = s.nodes[id];
           if (!p?.review) return s;
           const now = Date.now();
           const review = nextReview(p.review, outcome, now);
-          const demote = outcome === "failed";
-          return {
-            ...touch(s),
-            nodes: {
-              ...s.nodes,
-              [id]: {
-                ...p,
-                review,
-                confidence: demote ? (Math.max(1, (p.confidence ?? 3) - 1) as 1 | 2 | 3 | 4 | 5) : p.confidence,
-                updatedAt: now,
-              },
-            },
+          const rec: EvidenceRecord = {
+            id: uid(), nodeId: id, kind: "retention",
+            outcome: outcome === "failed" ? "fail" : outcome === "hard" ? "partial" : "pass",
+            attempt: sketch, at: now,
           };
+          const events = capEvents([...s.events, rec]);
+          let nodes = recomputeNode(s.nodes, events, id, now);
+          const cur = nodes[id];
+          if (cur) nodes = { ...nodes, [id]: { ...cur, review, updatedAt: now } };
+          return { ...touch(s), events, nodes };
         }),
 
       addLog: (log) =>
@@ -166,14 +238,24 @@ export const useStore = create<StoreState>()(
           ...touch(s),
           papers: { ...s.papers, [id]: { ...s.papers[id], status, notes: notes ?? s.papers[id]?.notes, updatedAt: Date.now() } },
         })),
-      recordDefense: (paperId, result) =>
+      recordDefense: (paperId, result, nodeIds) => {
         set((s) => ({
           ...touch(s),
           papers: {
             ...s.papers,
             [paperId]: { ...(s.papers[paperId] ?? { status: "reading" as const }), defense: result, updatedAt: Date.now() },
           },
-        })),
+        }));
+        // a defended paper is integration evidence for its prerequisite nodes
+        if (result.verdict === "defended" && nodeIds?.length) {
+          for (const nodeId of nodeIds) {
+            get().recordEvidence({
+              nodeId, kind: "paper", outcome: "pass",
+              note: `defended ${paperId} (${result.score}/${result.total})`,
+            });
+          }
+        }
+      },
       setProjectStatus: (id, status, notes) =>
         set((s) => ({
           ...touch(s),
@@ -192,7 +274,7 @@ export const useStore = create<StoreState>()(
             },
           };
         }),
-      gradeLessonCheck: (nodeId, checkId, result) =>
+      gradeLessonCheck: (nodeId, checkId, result) => {
         set((s) => {
           const prev = s.lessons[nodeId] ?? { section: 0, checks: {}, updatedAt: 0 };
           return {
@@ -202,8 +284,14 @@ export const useStore = create<StoreState>()(
               [nodeId]: { ...prev, checks: { ...prev.checks, [checkId]: result }, updatedAt: Date.now() },
             },
           };
-        }),
-      completeLesson: (nodeId) =>
+        });
+        // lesson checks are retrieval evidence — the lesson layer now feeds mastery honestly
+        get().recordEvidence({
+          nodeId, kind: "retrieval", outcome: result === "got" ? "pass" : "fail", note: checkId, minutes: 2,
+        });
+      },
+      completeLesson: (nodeId) => {
+        const already = get().lessons[nodeId]?.completedAt;
         set((s) => {
           const prev = s.lessons[nodeId] ?? { section: 0, checks: {}, updatedAt: 0 };
           return {
@@ -213,7 +301,11 @@ export const useStore = create<StoreState>()(
               [nodeId]: { ...prev, completedAt: prev.completedAt ?? Date.now(), updatedAt: Date.now() },
             },
           };
-        }),
+        });
+        if (!already) {
+          get().recordEvidence({ nodeId, kind: "exposure", outcome: "info", note: "lesson completed", minutes: 10 });
+        }
+      },
       toggleMissionStep: (date, stepId, done) =>
         set((s) => {
           const prev: DayPlan = s.dayPlans[date] ?? { steps: {}, updatedAt: 0 };
@@ -273,7 +365,7 @@ export const useStore = create<StoreState>()(
       exportData: () => {
         const s = get();
         return {
-          schema: s.schema, rev: s.rev, nodes: s.nodes, logs: s.logs, papers: s.papers,
+          schema: s.schema, rev: s.rev, nodes: s.nodes, events: s.events, logs: s.logs, papers: s.papers,
           projects: s.projects, experiments: s.experiments, ideas: s.ideas,
           bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
           dayPlans: s.dayPlans, settings: s.settings,
@@ -300,9 +392,21 @@ export const useStore = create<StoreState>()(
             }
             return [...m.values()];
           };
+          // events: append-only union by id (never LWW — history merges losslessly)
+          const evMap = new Map(s.events.map((e) => [e.id, e]));
+          for (const e of r.events ?? []) if (!evMap.has(e.id)) evMap.set(e.id, e);
+          const events = capEvents([...evMap.values()].sort((a, b) => a.at - b.at));
+
+          let nodes = mergeMap(s.nodes, r.nodes);
+          // re-derive every node touched by the merged log so caches agree with evidence
+          const touched = new Set(events.map((e) => e.nodeId));
+          const now = Date.now();
+          for (const id of touched) nodes = recomputeNode(nodes, events, id, now);
+
           return {
             ...touch(s),
-            nodes: mergeMap(s.nodes, r.nodes),
+            events,
+            nodes,
             papers: mergeMap(s.papers, r.papers),
             projects: mergeMap(s.projects, r.projects),
             weeklies: mergeMap(s.weeklies, r.weeklies),
@@ -326,12 +430,12 @@ export const useStore = create<StoreState>()(
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       migrate: (persisted) => {
-        // v1 → v2: new maps default to empty; owner defaults to null
         const p = (persisted ?? {}) as Partial<StoreState>;
-        return { ...p, lessons: p.lessons ?? {}, dayPlans: p.dayPlans ?? {}, owner: p.owner ?? null } as StoreState;
+        const base: Partial<StoreState> = { ...p, lessons: p.lessons ?? {}, dayPlans: p.dayPlans ?? {}, owner: p.owner ?? null };
+        return migrateEvents(base) as StoreState;
       },
       partialize: (s) => ({
-        schema: SCHEMA_VERSION, rev: s.rev, owner: s.owner, nodes: s.nodes, logs: s.logs,
+        schema: SCHEMA_VERSION, rev: s.rev, owner: s.owner, nodes: s.nodes, events: s.events, logs: s.logs,
         papers: s.papers, projects: s.projects, experiments: s.experiments, ideas: s.ideas,
         bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
         dayPlans: s.dayPlans, settings: s.settings,
@@ -341,14 +445,48 @@ export const useStore = create<StoreState>()(
   ),
 );
 
+const LEGACY_INDEP: Record<Independence, IndependenceLevel> = {
+  independent: "independent",
+  hints: "minor_hints",
+  heavy_ai: "full_solution_seen",
+  copied: "full_solution_seen",
+};
+
+/** v2 → v3: tiers that predate the evidence log become flagged manual-override events. */
+function migrateEvents<T extends Partial<ProgressData>>(data: T): T {
+  if (data.events && data.events.length > 0) return { ...data, events: data.events };
+  const nodes = data.nodes ?? {};
+  const events: EvidenceRecord[] = [];
+  for (const [nodeId, p] of Object.entries(nodes)) {
+    if (!p || p.tier === "none") continue;
+    events.push({
+      id: `legacy-${nodeId}`,
+      nodeId,
+      kind: "manual-override",
+      outcome: "info",
+      tier: p.tier,
+      independence: p.independence ? LEGACY_INDEP[p.independence] : undefined,
+      note: p.evidence ? `legacy claim · ${p.evidence}` : "legacy claim (pre-evidence schema)",
+      at: p.masteredAt ?? p.updatedAt ?? Date.now(),
+    });
+  }
+  // refresh derived flags on the cached nodes
+  let out: Record<string, NodeProgress> = { ...nodes };
+  const now = Date.now();
+  for (const id of Object.keys(nodes)) out = recomputeNode(out, events, id, now);
+  return { ...data, events, nodes: out };
+}
+
 export function migrate(data: ProgressData): ProgressData {
   const base = emptyData();
-  return {
+  const merged: ProgressData = {
     ...base,
     ...data,
     schema: SCHEMA_VERSION,
+    events: data.events ?? [],
     lessons: data.lessons ?? {},
     dayPlans: data.dayPlans ?? {},
     settings: { ...base.settings, ...data.settings },
   };
+  return migrateEvents(merged);
 }

@@ -12,10 +12,11 @@ import { levelById } from "@/content/levels";
 import { hasLesson, lessonMeta } from "@/content/lessons/manifest";
 import { useStore } from "@/lib/store";
 import { nodeState, missingPrereqs, unlocks, DEFAULT_EDGE_TIER } from "@/lib/engine/graph";
-import { nodeXp } from "@/lib/engine/mastery";
 import { Katex, NodePill, Panel, SectionTitle, StateBadge, TierBadge, TIER_COLORS } from "@/components/ui";
-import { claimWithMoment } from "@/components/MasteryMoment";
-import { TIERS, tierAtLeast, type Independence, type ResourceBinding, type Tier } from "@/lib/types";
+import { assessWithMoment } from "@/components/MasteryMoment";
+import { AssessmentBox } from "@/components/AssessmentBox";
+import { independenceFromChoice } from "@/lib/engine/competency";
+import { tierAtLeast, type ResourceBinding } from "@/lib/types";
 
 export function NodeView({ id }: { id: string }) {
   const node = NODE_MAP.get(id);
@@ -45,9 +46,14 @@ export function NodeView({ id }: { id: string }) {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <StateBadge state={state} />
             {p && p.tier !== "none" && <TierBadge tier={p.tier} />}
+            {p?.verified && <span className="rounded bg-acc-robot/15 px-1.5 py-0.5 font-mono text-[10px] text-acc-robot">✓ verified</span>}
+            {p?.provisional && (
+              <span className="rounded bg-acc-math/15 px-1.5 py-0.5 font-mono text-[10px] text-acc-math">
+                {p.legacy ? "legacy claim — unverified" : "claimed — not yet verified"}
+              </span>
+            )}
             <span className="font-mono text-xs text-faint">{node.hours}h est</span>
             <span className="font-mono text-xs text-faint">gate: {node.masteryGate}</span>
-            {p && <span className="font-mono text-xs text-acc-math">{nodeXp(id, progress)} XP</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -261,11 +267,17 @@ export function NodeView({ id }: { id: string }) {
           )}
 
           <Panel>
-            <SectionTitle>diagnostic — skip test</SectionTitle>
-            <p className="text-sm text-dim">{node.diagnostic}</p>
-            <p className="mt-2 text-[11px] text-faint">
-              Answer this cold (to a camera or a tutor session)? Claim the gate tier below — never wait on the calendar.
-            </p>
+            <details>
+              <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-widest text-dim hover:text-acc">
+                already know this? test out
+              </summary>
+              <p className="mt-2 text-sm text-dim">{node.diagnostic}</p>
+              <p className="mt-1 text-[11px] text-faint">
+                Prove it cold below — passing skips this node now (never wait on the calendar). A quick
+                review lands in ~2 days to make sure it was real.
+              </p>
+              <AssessmentBox id={id} diagnostic />
+            </details>
           </Panel>
         </div>
       </div>
@@ -302,62 +314,61 @@ function MasteryPanel({ id, locked }: { id: string; locked: boolean }) {
   const store = useStore();
   const node = NODE_MAP.get(id)!;
   const p = store.nodes[id];
-  const [evidence, setEvidence] = useState(p?.evidence ?? "");
-  const [indep, setIndep] = useState<Independence>(p?.independence ?? "independent");
-  const claimable: Tier[] = TIERS.filter((t) => t !== "none");
+  const unverifiedPrereqs = node.prereqs
+    .map((pr) => ({ pr, prog: store.nodes[pr.id] }))
+    .filter((x) => x.prog && tierAtLeast(x.prog.tier, x.pr.tier ?? DEFAULT_EDGE_TIER) && !x.prog.verified)
+    .map((x) => NODE_MAP.get(x.pr.id)?.title ?? x.pr.id);
 
   return (
     <Panel accent="#52d68a">
-      <SectionTitle>mastery gate — claim with evidence</SectionTitle>
-      <p className="mb-2 text-sm text-dim">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-acc-robot">gold test → </span>
+      <SectionTitle>mastery gate — prove it, then it verifies</SectionTitle>
+      <p className="mb-1 text-sm text-dim">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-acc-robot">the bar → </span>
         {node.masteryTest}
       </p>
-      <div className="mb-2 grid gap-2 md:grid-cols-2">
-        <input value={evidence} onChange={(e) => setEvidence(e.target.value)} placeholder="Evidence: repo link, derivation page, video…" />
-        <select value={indep} onChange={(e) => setIndep(e.target.value as Independence)}>
-          <option value="independent">fully independent</option>
-          <option value="hints">hint-assisted</option>
-          <option value="heavy_ai">heavily AI-assisted</option>
-          <option value="copied">copied a solution</option>
-        </select>
-      </div>
-      {(indep === "heavy_ai" || indep === "copied") && (
+      {p?.verified && (
+        <div className="mb-2 text-xs text-acc-robot">✓ Independently verified — an assessment plus a later review both held.</div>
+      )}
+      {p?.provisional && (
         <div className="mb-2 text-xs text-acc-math">
-          ⚠ Heavy assistance caps honest claims at Silver (HANDOVER §11). Redo it independently for Gold.
+          {p.legacy
+            ? "This tier rests on a legacy claim from before the evidence system. Re-prove it below to verify."
+            : "Claimed — not yet verified. A review lands in ~2 days; passing it verifies this node."}
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        {claimable.map((t) => {
-          const isGate = t === node.masteryGate;
-          const current = p?.tier === t;
-          const blockedByIndep = (indep === "heavy_ai" || indep === "copied") && tierAtLeast(t, "gold");
-          return (
-            <button
-              key={t}
-              disabled={locked || blockedByIndep}
-              onClick={() => claimWithMoment(id, t, evidence || undefined, indep)}
-              className="btn disabled:cursor-not-allowed disabled:opacity-35"
-              style={current ? { borderColor: TIER_COLORS[t], color: TIER_COLORS[t] } : isGate ? { borderColor: `${TIER_COLORS[t]}88` } : undefined}
-              title={isGate ? "The gate tier for this node" : undefined}
-            >
-              {current ? "● " : ""}{t}{isGate ? " ▲" : ""}
-            </button>
-          );
-        })}
-        {p && (
-          <button className="btn btn-danger" onClick={() => store.resetNode(id)}>reset</button>
-        )}
-      </div>
-      {locked && <div className="mt-2 text-xs text-faint">Locked — pass the prerequisite gates first (or prove them via their diagnostics).</div>}
+      {unverifiedPrereqs.length > 0 && (
+        <div className="mb-2 text-[11px] text-faint">
+          built on unverified: {unverifiedPrereqs.slice(0, 3).join(" · ")}
+          {unverifiedPrereqs.length > 3 ? ` +${unverifiedPrereqs.length - 3}` : ""}
+        </div>
+      )}
+      {locked ? (
+        <div className="text-xs text-faint">Locked — pass the prerequisite gates first (or prove them via their test-outs).</div>
+      ) : (
+        <AssessmentBox id={id} />
+      )}
     </Panel>
   );
 }
 
 function BossAttemptBox({ bossId }: { bossId: string }) {
   const store = useStore();
+  const boss = bossById(bossId);
   const [notes, setNotes] = useState("");
+  const [checked, setChecked] = useState<Set<number>>(new Set());
+  const [choice, setChoice] = useState<"myself" | "hints" | "ai" | null>(null);
   const attempts = store.bossAttempts.filter((a) => a.bossId === bossId);
+  const criteria = boss?.passCriteria ?? [];
+  const allChecked = criteria.length > 0 && checked.size === criteria.length;
+  const canPass = allChecked && notes.trim().length >= 30 && !!choice;
+
+  const toggle = (i: number) =>
+    setChecked((s) => {
+      const n = new Set(s);
+      if (n.has(i)) n.delete(i); else n.add(i);
+      return n;
+    });
+
   return (
     <div className="mt-4 border-t border-line pt-3">
       <div className="mono-label mb-1.5">attempts</div>
@@ -368,24 +379,61 @@ function BossAttemptBox({ bossId }: { bossId: string }) {
           {a.notes && <span className="ml-2 text-dim">{a.notes}</span>}
         </div>
       ))}
-      <div className="mt-2 flex gap-2">
-        <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Attempt notes / weaknesses found…" />
+      <div className="mono-label mb-1 mt-3">pass criteria — check each only when it is actually true</div>
+      <div className="space-y-1">
+        {criteria.map((c, i) => (
+          <label key={i} className="flex cursor-pointer items-start gap-2 text-[13px] text-dim">
+            <input type="checkbox" checked={checked.has(i)} onChange={() => toggle(i)} className="mt-0.5 !w-auto" />
+            <span>{c}</span>
+          </label>
+        ))}
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        className="mt-2 w-full text-[13px]"
+        placeholder="What you built / where the run lives / weaknesses found (min 30 chars)…"
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {([["myself", "did it myself"], ["hints", "with hints"], ["ai", "AI-heavy"]] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setChoice(k)}
+            className="rounded-md border px-2 py-1 text-[11px]"
+            style={{
+              borderColor: choice === k ? "#4dd6e888" : "var(--color-line2)",
+              color: choice === k ? "#4dd6e8" : "var(--color-dim)",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="mx-1 border-l border-line" />
         <button
-          className="btn shrink-0"
+          className="btn !py-1.5 text-xs"
           onClick={() => {
             store.recordBossAttempt({ bossId, date: new Date().toISOString().slice(0, 10), passed: false, notes });
-            setNotes("");
+            store.recordEvidence({ nodeId: bossId, kind: "assessment", outcome: "fail", attempt: notes, note: "boss attempt" });
+            setNotes(""); setChecked(new Set()); setChoice(null);
           }}
         >
           Log fail
         </button>
         <button
-          className="btn btn-acc shrink-0"
+          className="btn btn-acc !py-1.5 text-xs disabled:opacity-35"
+          disabled={!canPass}
+          title={!canPass ? "All criteria checked + notes + honesty declaration required" : undefined}
           onClick={() => {
+            if (!choice) return;
             store.recordBossAttempt({ bossId, date: new Date().toISOString().slice(0, 10), passed: true, notes });
-            const node = NODE_MAP.get(bossId)!;
-            claimWithMoment(bossId, node.masteryGate, notes || "boss passed");
-            setNotes("");
+            assessWithMoment(bossId, {
+              attempt: `criteria: ${criteria.map((_, i) => (checked.has(i) ? "✓" : "✗")).join("")} · ${notes}`,
+              passed: true,
+              independence: independenceFromChoice(choice),
+              note: "boss",
+            });
+            setNotes(""); setChecked(new Set()); setChoice(null);
           }}
         >
           ✓ Passed

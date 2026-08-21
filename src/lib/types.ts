@@ -234,7 +234,73 @@ export interface NodeProgress {
   masteredAt?: number;
   review?: ReviewState;
   updatedAt: number;
+  // ── derived from the evidence log (recalibration; never set directly by UI) ──
+  /** Passed an independent assessment AND a later retention/transfer check. */
+  verified?: boolean;
+  /** At/above gate on evidence, but not yet verified. */
+  provisional?: boolean;
+  /** Tier rests on a manual/legacy override rather than evidence. */
+  legacy?: boolean;
+  semantic?: SemanticState;
 }
+
+// ---------- evidence log (HANDOVERFINAL §24–26, §59) ----------
+// State is DERIVED from these records. No normal user action writes a tier.
+
+export type EvidenceKind =
+  | "exposure"        // watched/read/attended (info only — never advances mastery)
+  | "retrieval"       // recall question attempted (pass/fail)
+  | "problem"         // practice problem attempted
+  | "implementation"  // code artifact built
+  | "debugging"       // found/fixed a defect
+  | "derivation"      // reproduced math on paper
+  | "assessment"      // the node's PROVE-IT / diagnostic, typed + self-graded
+  | "transfer"        // unseen-context task
+  | "retention"       // delayed check (review queue)
+  | "project"         // project-integration evidence
+  | "paper"           // paper-integration evidence (defense etc.)
+  | "research"        // research-level critique/extension
+  | "tutor"           // structured tutor-session summary (supporting only)
+  | "manual-override";// legacy/admin tier set — always displayed as unverified
+
+export type IndependenceLevel =
+  | "independent"
+  | "minor_hints"
+  | "socratic"
+  | "partial_solution"
+  | "full_solution_seen";
+
+export interface EvidenceRecord {
+  id: string;
+  nodeId: string;
+  kind: EvidenceKind;
+  outcome: "pass" | "fail" | "partial" | "info";
+  independence?: IndependenceLevel;
+  /** 0..1 where a graded fraction applies. */
+  score?: number;
+  /** manual-override only: the tier being asserted ("none" = reset boundary). */
+  tier?: Tier;
+  /** Typed closed-book attempt (assessment/retention/diagnostic). */
+  attempt?: string;
+  /** Commit/URL/description for implementation/project evidence. */
+  artifact?: string;
+  note?: string;
+  minutes?: number;
+  at: number;
+}
+
+/** Tree/legibility states (HANDOVERFINAL §31). */
+export type SemanticState =
+  | "unknown"
+  | "exposed"
+  | "practicing"
+  | "weak"
+  | "assessment-ready"
+  | "claimed-provisional"
+  | "independently-verified"
+  | "retention-risk"
+  | "integrated"
+  | "research-level";
 
 export interface SessionLog {
   id: string;
@@ -356,6 +422,8 @@ export interface ProgressData {
   schema: number;
   rev: number;
   nodes: Record<string, NodeProgress>;
+  /** Append-only evidence log — the source of truth `nodes` is derived from. */
+  events: EvidenceRecord[];
   logs: SessionLog[];
   papers: Record<string, PaperProgress>;
   projects: Record<string, ProjectProgress>;

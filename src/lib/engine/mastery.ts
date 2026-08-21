@@ -84,8 +84,11 @@ export function clusterScores(progress: Record<string, NodeProgress>): ClusterSc
     const nodes = NODES.filter((n) => c.levels.includes(n.level) && !n.optional);
     let acc = 0;
     for (const n of nodes) {
-      const t = progress[n.id]?.tier ?? "none";
-      if (tierAtLeast(t, n.masteryGate)) acc += 1;
+      const p = progress[n.id];
+      const t = p?.tier ?? "none";
+      // Δ7: readiness counts VERIFIED capability at full value; a claim awaiting
+      // verification (or a legacy override) is worth half until a review confirms it.
+      if (tierAtLeast(t, n.masteryGate)) acc += p?.verified ? 1 : 0.5;
       else if (tierRank(t) > 0) acc += 0.4 * (tierRank(t) / tierRank(n.masteryGate || "gold"));
     }
     return { key: c.key, label: c.label, weight: c.weight, score: nodes.length ? acc / nodes.length : 0 };
