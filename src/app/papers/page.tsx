@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { PAPERS } from "@/content/papers";
 import { NODE_MAP } from "@/content/nodes";
 import { useStore } from "@/lib/store";
-import { prereqsSatisfied } from "@/lib/engine/graph";
+import { isNodeComplete } from "@/lib/engine/graph";
 import { Panel } from "@/components/ui";
 import type { Paper, PaperStatus } from "@/lib/types";
 
@@ -91,7 +91,7 @@ function PaperCard({ paper: p, status, compact, focused }: { paper: Paper; statu
   const store = useStore();
   const unlocked = p.prereqNodeIds.every((id) => {
     const n = NODE_MAP.get(id);
-    return n ? prereqsSatisfied(n, store.nodes) : true;
+    return n ? isNodeComplete(n, store.nodes) : true;
   });
   const [open, setOpen] = useState(!!focused);
 

@@ -2,7 +2,7 @@ import { NODE_MAP } from "@/content/nodes";
 import { PROJECTS } from "@/content/projects";
 import { DAY_TEMPLATE, RESEARCH_DAY_TEMPLATE } from "@/content/schedule";
 import type { ProgressData, SkillNode, Track } from "@/lib/types";
-import { frontier, missingPrereqs, prereqsSatisfied } from "./graph";
+import { frontier, isNodeComplete, missingPrereqs, prereqsSatisfied } from "./graph";
 import { bossPassed } from "./mastery";
 import { dayOfProgram, expectedLevels } from "./pacing";
 import { reviewQueue } from "./review";
@@ -63,13 +63,13 @@ export function researchModeActive(data: ProgressData, now = Date.now()): boolea
 export function activeProject(data: ProgressData) {
   const explicit = PROJECTS.find((p) => data.projects[p.id]?.status === "active");
   if (explicit) return explicit;
-  // first not-done project whose prerequisite nodes are all at least unlocked-and-touched
+  // first not-done project whose prerequisite nodes are complete at their gate tier
   return PROJECTS.find(
     (p) =>
       data.projects[p.id]?.status !== "done" &&
       p.prereqNodeIds.every((id) => {
         const n = NODE_MAP.get(id);
-        return n ? prereqsSatisfied(n, data.nodes) : true;
+        return n ? isNodeComplete(n, data.nodes) : true;
       }),
   );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { PROJECTS } from "@/content/projects";
 import { NODE_MAP } from "@/content/nodes";
 import { useStore } from "@/lib/store";
-import { prereqsSatisfied } from "@/lib/engine/graph";
+import { isNodeComplete } from "@/lib/engine/graph";
 import { Panel, SectionTitle } from "@/components/ui";
 import type { ProjectStatus } from "@/lib/types";
 
@@ -30,7 +30,7 @@ export default function ProjectsPage() {
           const stored = store.projects[p.id]?.status;
           const unlocked = p.prereqNodeIds.every((id) => {
             const n = NODE_MAP.get(id);
-            return n ? prereqsSatisfied(n, store.nodes) : true;
+            return n ? isNodeComplete(n, store.nodes) : true;
           });
           const status = (stored ?? (unlocked ? "todo" : "locked")) as ProjectStatus | "locked";
           const m = STATUS_META[status];
