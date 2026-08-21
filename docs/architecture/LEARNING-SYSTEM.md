@@ -183,3 +183,15 @@ M11 audit+fixes → M12 docs/README/final.
 
 Non-negotiables preserved throughout: content validators, mastery/tier logic, verified
 scientific content, zero-env deployability.
+
+## 7. Delivery note — 2026-08-21
+
+All twelve milestones shipped on `claude/embodied-intelligence-research-s48jrg`:
+16 lessons (l1-python-basics → l12-vla-anatomy) passing the §5 rubric mechanically
+via `validateLessons()`; 15 widgets on the hand-rolled SVG toolkit (real equations
+throughout — eigensolves, DLS iterations, 240 Hz plant, value-iteration sweeps);
+7-step mission `/today`; pathfinding tree; 63 paper study pages + Defense Mode;
+`/guide` field manual + instrument bench in `/labs`. Build: 333 static pages, lint
+clean under the react-hooks compiler rules. A Vercel project (`embodied-os`, VANTA
+team) is git-linked to the repo — pushes build automatically; production follows
+the default branch.
