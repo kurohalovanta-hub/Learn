@@ -16,18 +16,21 @@ focused hours/day" and that anything that cannot fit is flagged. This is that an
 
 | Block | Core h | Notes |
 |---|---|---|
-| L0–L2 foundations (survival, Python, math) | 186 | runs Days 1–45 in parallel tracks |
-| L3–L4 ML + DL | 120 | overlaps tail of L2 |
-| L5–L9 robotics core (geometry→autonomy) | 206 | overlaps L4 partially |
-| L10–L11 robot learning | 90 | |
+| L0–L2 foundations (survival, Python, math) | 220 | runs Days 1–50 in parallel tracks; math budget audited against the foundations report (132–182 h math range; fast-learner low end assumed via diagnostics) |
+| L3–L4 ML + DL | 127 | overlaps tail of L2 |
+| L5–L9 robotics core (geometry→autonomy) | 230 | overlaps L4 partially |
+| L10–L11 robot learning | 94 | |
 | L12–L14 VLA, world models, sim2real | 98 | |
 | L15 research methodology + reproduction | 34 (+reproduction inside M6 budget) | starts Month 2 |
 | L16 original research sprint | ~120 | Month 7, protected |
-| **Core total** | **~854** | |
-| Stretch pool (optional depth) | +128 | absorbed only if ahead |
+| **Core total** | **~923** | |
+| Stretch pool (optional depth) | +142 | absorbed only if ahead |
 
-**Core (854) + weekly reviews (90) = 944 h** → fits at **5.4 h/day average**; the 7 h/day
-ceiling leaves ~300 h of headroom for stretch content, remediation, and overruns.
+**Core (923) + weekly reviews (90) = 1,013 h** → fits at **5.6 h/day average**; the 7 h/day
+ceiling leaves ~250 h of headroom for stretch content, remediation, and overruns. If the
+learner runs at the *midpoint* of the research hour-ranges instead of the fast-learner low
+end, core grows to ~1,050 h — still inside the ceiling, consuming the headroom; that is the
+honest boundary of feasibility and exactly what the pacing overlay must surface by Week 4.
 
 ## 3. Why the parallel-track model is the load-bearing assumption
 
