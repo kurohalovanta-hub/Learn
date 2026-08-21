@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/* ── EMBODIED // OS — dark-only mission-control palette (ADR-001) ── */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, "SF Mono", monospace;
+
+  --color-bg: #0a0e14;
+  --color-panel: #0f141c;
+  --color-panel2: #131a24;
+  --color-ink: #d7dfe9;
+  --color-dim: #8b97a7;
+  --color-faint: #5a6675;
+  --color-line: #1d2733;
+  --color-line2: #2a3646;
+
+  --color-acc: #4dd6e8; /* primary cyan */
+  --color-acc-code: #4dd6e8;
+  --color-acc-math: #e8b34d;
+  --color-acc-ml: #a78bfa;
+  --color-acc-robot: #52d68a;
+  --color-acc-learn: #f2934d;
+  --color-acc-frontier: #f4586e;
+  --color-acc-research: #e86ea4;
+
+  --color-locked: #46536414;
+  --color-ok: #52d68a;
+  --color-warn: #e8b34d;
+  --color-alert: #f4586e;
+}
+
+/* raw tokens for non-tailwind consumers (levels.ts accents, SVG) */
+:root {
+  --acc-code: #4dd6e8;
+  --acc-math: #e8b34d;
+  --acc-ml: #a78bfa;
+  --acc-robot: #52d68a;
+  --acc-learn: #f2934d;
+  --acc-frontier: #f4586e;
+  --acc-research: #e86ea4;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 85% -10%, #10202b66 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, #1a142b55 0%, transparent 55%),
+    var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #4dd6e833;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3646 transparent;
+}
+
+/* fine grid backdrop for the tree */
+.grid-backdrop {
+  background-image:
+    linear-gradient(#16202c66 1px, transparent 1px),
+    linear-gradient(90deg, #16202c66 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+}
+
+.hover-raise {
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.hover-raise:hover {
+  border-color: var(--color-line2);
+  background: var(--color-panel2);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.katex {
+  font-size: 1.02em;
+}
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+input, textarea, select {
+  background: var(--color-panel2);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  color: var(--color-ink);
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: #4dd6e866;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--color-faint);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-line2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: var(--color-panel2);
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+.btn:hover {
+  border-color: #4dd6e866;
+  color: #fff;
+}
+.btn-acc {
+  background: #4dd6e81a;
+  border-color: #4dd6e855;
+  color: #9ce9f2;
+}
+.btn-acc:hover {
+  background: #4dd6e82e;
+}
+.btn-danger {
+  border-color: #f4586e55;
+  color: #f58a99;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}

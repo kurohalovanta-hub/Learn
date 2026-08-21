@@ -94,7 +94,7 @@ Key structural choices vs. a naive linear program:
 
 ## 4. Node inventory and budgeted hours
 
-Granularity target: a node = one sitting-to-three-days of work (2–12 h). ~170 nodes total.
+Granularity target: a node = one sitting-to-three-days of work (2–12 h). 149 nodes total (final, validator-counted).
 
 | Level | Nodes | Core hours | Stretch hours | Gate |
 |---|---|---|---|---|
@@ -109,18 +109,18 @@ Granularity target: a node = one sitting-to-three-days of work (2–12 h). ~170 
 | L8 Perception | 8 | 38 | +6 | project gate |
 | L9 Planning + Autonomy | 7 | 34 | +6 | **Autonomy Boss** |
 | L10 Reinforcement Learning | 9 | 50 | +8 | gate quiz + impl |
-| L11 Imitation Learning | 8 | 44 | +8 | **Robot Learning Boss** |
-| L12 VLA | 9 | 50 | +10 | **VLA Boss** |
-| L13 World Models | 6 | 30 | +8 | experiment gate |
+| L11 Imitation Learning | 9 | 52 | +8 | **Robot Learning Boss** |
+| L12 VLA | 10 | 56 | +10 | **VLA Boss** |
+| L13 World Models | 6 | 32 | +8 | experiment gate |
 | L14 Sim-to-Real | 5 | 18 | +10 (hw) | checklist |
 | L15 Research Apprenticeship | 7 | 34 | ongoing | reproduction |
 | L16 Original Research | 6 | ~120 | — | **Final Boss** |
-| **Total** | **~166** | **~923** | **+142** | |
+| **Total** | **149** | **939** | **+8 (hw track)** | |
 
 Hour budgets are the research-audited numbers (see `03-curriculum-audit.md` §E); the
 fast-learner-with-diagnostics case lands at the low end of each report's range.
 Budget check: 30 weeks × 6 days × 5–7 h = **900–1,260 focused hours**.
-Core path (923 h) + weekly reviews (30 × 3 h = 90 h) = **1,013 h** → fits at a 5.6 h/day
+Core path (939 h, validator-counted) + weekly reviews (30 × 3 h = 90 h) = **1,029 h** → fits at a 5.7 h/day
 average with the 7 h/day ceiling leaving ~250 h of headroom for stretch content and
 overruns. Detailed feasibility math in `06-feasibility.md`.
 

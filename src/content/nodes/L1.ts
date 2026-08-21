@@ -115,7 +115,7 @@ export const L1_NODES: SkillNode[] = [
     prereqs: [{ id: "l1-data-structures" }],
     hours: 4,
     primary: { resourceId: "think-python", sections: "Files chapter + JSON exercises" },
-    reference: [{ resourceId: "atbs", sections: "Files/JSON chapters as lookup" }],
+    references: [{ resourceId: "atbs", sections: "Files/JSON chapters as lookup" }],
     exercises: [
       "Experiment logger: append JSON-lines results, then a loader that summarizes them",
       "Robust file reader: handles missing file, bad encoding, malformed line — each with a distinct, informative error path",
@@ -189,7 +189,7 @@ export const L1_NODES: SkillNode[] = [
     hours: 8,
     primary: { resourceId: "numpy-docs", sections: "Absolute basics → quickstart → Broadcasting, Indexing, Copies & views" },
     backup: { resourceId: "scipy-lectures", sections: "NumPy chapter" },
-    reference: [{ resourceId: "py2numpy", sections: "Case studies (after 2 weeks of use)" }],
+    references: [{ resourceId: "py2numpy", sections: "Case studies (after 2 weeks of use)" }],
     equations: ["\\text{broadcast: } (m,1)\\odot(1,n)\\to(m,n)"],
     exercises: [
       "Predict result shapes for 15 broadcasting expressions before running",

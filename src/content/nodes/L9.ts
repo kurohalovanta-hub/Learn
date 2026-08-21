@@ -38,7 +38,7 @@ export const L9_NODES: SkillNode[] = [
     prereqs: [{ id: "l9-graph-search" }, { id: "l5-ik", tier: "gold" }],
     hours: 6,
     primary: { resourceId: "pythonrobotics", sections: "RRT/RRT* references — after your own build" },
-    reference: [{ resourceId: "lavalle", sections: "Ch 5 skim for the theory backbone" }, { resourceId: "ompl", sections: "Know it exists as the production library" }],
+    references: [{ resourceId: "lavalle", sections: "Ch 5 skim for the theory backbone" }, { resourceId: "ompl", sections: "Know it exists as the production library" }],
     implementation: "2D RRT first (visualized growing tree), then joint-space RRT for your UR5e around a shelf obstacle using MuJoCo collision checks; shortcut + time-parameterize with your traj.py.",
     exercises: ["50-seed benchmark: success rate, path length pre/post shortcutting, planning time — a proper planner eval table"],
     masteryGate: "gold",

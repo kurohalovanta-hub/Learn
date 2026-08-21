@@ -1,4 +1,4 @@
-# The Paper Ladder — 62 Papers from First Backprop to the Frontier
+# The Paper Ladder — 63 Papers from First Backprop to the Frontier
 
 **Verified against reports/ (2026-08-21). Full cards (per HANDOVER §29: prereqs, key equations/figures, reproduction plan, compute, questions) live in `src/content/papers.ts`. This is the canonical ordering.**
 

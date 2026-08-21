@@ -156,7 +156,7 @@ export const L8_NODES: SkillNode[] = [
     hours: 3,
     primary: { resourceId: "stachniss", sections: "'Introduction to SLAM' lecture + graph-SLAM overview" },
     backup: { resourceId: "pythonrobotics", sections: "EKF-SLAM + FastSLAM demos — run, then read" },
-    reference: [{ resourceId: "slam-handbook", sections: "On-demand forever after" }],
+    references: [{ resourceId: "slam-handbook", sections: "On-demand forever after" }],
     exercises: ["Run EKF-SLAM; kill loop closure; watch drift accumulate — narrate why"],
     masteryGate: "bronze",
     masteryTest: "Whiteboard the SLAM problem and its two classic solutions in 10 minutes, ending with 'and here is why my manipulation research doesn't need me to go deeper (yet)'.",

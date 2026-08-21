@@ -19,15 +19,15 @@ focused hours/day" and that anything that cannot fit is flagged. This is that an
 | L0–L2 foundations (survival, Python, math) | 220 | runs Days 1–50 in parallel tracks; math budget audited against the foundations report (132–182 h math range; fast-learner low end assumed via diagnostics) |
 | L3–L4 ML + DL | 127 | overlaps tail of L2 |
 | L5–L9 robotics core (geometry→autonomy) | 230 | overlaps L4 partially |
-| L10–L11 robot learning | 94 | |
-| L12–L14 VLA, world models, sim2real | 98 | |
+| L10–L11 robot learning | 102 | |
+| L12–L14 VLA, world models, sim2real | 106 | |
 | L15 research methodology + reproduction | 34 (+reproduction inside M6 budget) | starts Month 2 |
 | L16 original research sprint | ~120 | Month 7, protected |
-| **Core total** | **~923** | |
-| Stretch pool (optional depth) | +142 | absorbed only if ahead |
+| **Core total** | **939** (validator-counted) | |
+| Stretch pool (optional depth) | +8 h optional hardware track; per-node stretch lives inside estimates | absorbed only if ahead |
 
-**Core (923) + weekly reviews (90) = 1,013 h** → fits at **5.6 h/day average**; the 7 h/day
-ceiling leaves ~250 h of headroom for stretch content, remediation, and overruns. If the
+**Core (939) + weekly reviews (90) = 1,029 h** → fits at **5.7 h/day average**; the 7 h/day
+ceiling leaves ~230 h of headroom for stretch content, remediation, and overruns. If the
 learner runs at the *midpoint* of the research hour-ranges instead of the fast-learner low
 end, core grows to ~1,050 h — still inside the ceiling, consuming the headroom; that is the
 honest boundary of feasibility and exactly what the pacing overlay must surface by Week 4.
@@ -43,16 +43,16 @@ if tracks are serialized or mastery gates are ignored (debt compounds).**
 ## 4. Stress points (flagged, per handover §34.13)
 
 1. **Math bootloader variance is the #1 risk.** Grade-10 → working multivariable calculus +
-   linear algebra is budgeted 96 h. For a genuinely fast learner this is achievable (Khan
+   linear algebra is budgeted 130 h. For a genuinely fast learner this is achievable (Khan
    Academy unit tests allow testing-out; the app's diagnostic-skip exists exactly for this).
-   If it takes 150 h instead, the stretch pool absorbs it — but if it takes 250 h, Months 6–7
+   If it takes 150 h instead, the stretch pool absorbs it — but if it takes 250+ h, Months 6–7
    compress and **reproduction scope must shrink (one deep reproduction, not several).** The
    dashboard's pacing overlay makes this visible by Week 4, when corrective re-planning is cheap.
 2. **"Reproduce multiple meaningful results" (Month 6, handover §8) is the least certain
    promise.** One rigorous component-level reproduction + one lighter evaluation-level
    reproduction is the realistic target; a full π0-scale reproduction is out of reach of any
    solo learner and is explicitly de-scoped (see 04-compute-strategy.md).
-3. **ROS 2 scope creep.** ROS is capped at 40 core hours (literacy, not mastery). The classic
+3. **ROS 2 scope creep.** ROS-track work is capped at ~52 core hours (literacy, not mastery). The classic
    failure is a month lost in ROS plumbing; the curriculum's gate is a working pipeline, not
    framework fluency. C++ is capped at reading literacy (8 h + just-in-time).
 4. **Level 9 (planning/autonomy) is the designated sacrifice.** If the schedule slips by
