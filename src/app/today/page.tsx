@@ -310,11 +310,11 @@ function MissionStep({
         >
           {state === "done" ? "✓" : step.code}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className={`font-mono text-[12px] font-bold tracking-wider ${state === "done" ? "text-faint line-through" : "text-ink"}`}>
+        <span className="flex min-w-0 flex-1 items-baseline gap-2">
+          <span className={`shrink-0 font-mono text-[12px] font-bold tracking-wider ${state === "done" ? "text-faint line-through" : "text-ink"}`}>
             {step.title}
           </span>
-          <span className="ml-2 truncate text-xs text-dim">{step.summary}</span>
+          <span className="min-w-0 flex-1 truncate text-xs text-dim">{step.summary}</span>
         </span>
         {step.minutes != null && (
           <span className="shrink-0 font-mono text-[10.5px] text-faint">~{step.minutes}m</span>

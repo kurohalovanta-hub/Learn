@@ -53,6 +53,7 @@ const NAV_GROUPS: { section: string; items: NavItem[] }[] = [
     items: [
       { href: "/review", label: "Review", icon: "↻" },
       { href: "/weekly", label: "Weekly", icon: "⑦" },
+      { href: "/guide", label: "Field Manual", icon: "?" },
       { href: "/settings", label: "Settings", icon: "⚙" },
       { href: "/admin", label: "Admin", icon: "⛨", adminOnly: true },
     ],

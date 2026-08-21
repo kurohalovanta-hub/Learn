@@ -71,6 +71,15 @@ export default function TreePage() {
     setView({ k, x: (rect.width - layout.width * k) / 2, y: (rect.height - layout.height * k) / 2 });
   }, [layout]);
 
+  const zoomBy = useCallback(
+    (factor: number) => {
+      const rect = wrapRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      zoomAt(rect.width / 2, rect.height / 2, factor);
+    },
+    [zoomAt],
+  );
+
   const edges = useMemo(() => {
     const out: { from: string; to: string; gold: boolean }[] = [];
     for (const n of NODES) {
@@ -102,20 +111,12 @@ export default function TreePage() {
       <div ref={wrapRef} className="grid-backdrop panel relative flex-1 overflow-hidden !bg-bg">
         {/* zoom controls */}
         <div className="absolute right-3 top-3 z-10 flex flex-col gap-1.5">
-          {[
-            { label: "+", act: () => zoomIn(1.25) },
-            { label: "−", act: () => zoomIn(0.8) },
-            { label: "⤢", act: fit },
-          ].map((b) => (
-            <button
-              key={b.label}
-              onClick={b.act}
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-panel font-mono text-sm text-dim transition-colors hover:border-acc/50 hover:text-acc"
-              aria-label={b.label === "⤢" ? "fit graph" : b.label === "+" ? "zoom in" : "zoom out"}
-            >
-              {b.label}
-            </button>
-          ))}
+          <button onClick={() => zoomBy(1.25)} aria-label="zoom in"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-panel font-mono text-sm text-dim transition-colors hover:border-acc/50 hover:text-acc">+</button>
+          <button onClick={() => zoomBy(0.8)} aria-label="zoom out"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-panel font-mono text-sm text-dim transition-colors hover:border-acc/50 hover:text-acc">−</button>
+          <button onClick={fit} aria-label="fit graph"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-panel font-mono text-sm text-dim transition-colors hover:border-acc/50 hover:text-acc">⤢</button>
         </div>
 
         <svg
@@ -304,10 +305,4 @@ export default function TreePage() {
       </div>
     </div>
   );
-
-  function zoomIn(factor: number) {
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    zoomAt(rect.width / 2, rect.height / 2, factor);
-  }
 }

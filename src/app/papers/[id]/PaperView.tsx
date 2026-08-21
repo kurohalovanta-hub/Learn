@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { PAPERS, paperById } from "@/content/papers";
 import { NODE_MAP } from "@/content/nodes";
-import { hasLesson } from "@/content/lessons/manifest";
 import { isNodeComplete, nodeState } from "@/lib/engine/graph";
 import { useStore } from "@/lib/store";
 import { Katex, Panel, SectionTitle, STATE_META } from "@/components/ui";
@@ -116,7 +115,7 @@ export function PaperView({ paperId }: { paperId: string }) {
           <div className="space-y-1 text-xs">
             {ancestors.map((a) => (
               <div key={a.id} className="flex items-center gap-2">
-                <span className="text-faint">▲ builds on you&apos;re reading:</span>
+                <span className="text-faint">▲ builds on:</span>
                 <Link href={`/papers/${a.id}`} className="text-dim hover:text-acc">{a.title}</Link>
               </div>
             ))}

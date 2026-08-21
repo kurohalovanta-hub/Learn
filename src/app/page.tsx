@@ -36,6 +36,8 @@ export default function Dashboard() {
     .slice(0, 6)
     .map((n) => ({ n, unlocks: wouldUnlock(n.id, data.nodes).length }));
 
+  const isFresh = stats.focusedHoursTotal === 0 && stats.nodesMastered === 0;
+
   return (
     <div className="space-y-5">
       {/* header */}
@@ -47,8 +49,35 @@ export default function Dashboard() {
             {phase && <span className="ml-3 text-sm font-normal text-dim">Month {phase.month} · {phase.title}</span>}
           </h1>
         </div>
-        <Link href="/today" className="btn btn-acc">▶ Open today&apos;s mission</Link>
+        <div className="flex gap-2">
+          <Link href="/guide" className="btn">? Manual</Link>
+          <Link href="/today" className="btn btn-acc">▶ Open today&apos;s mission</Link>
+        </div>
       </div>
+
+      {/* first-run orientation — disappears once real work is logged */}
+      {isFresh && (
+        <Panel accent="#e8b34d">
+          <SectionTitle>new here — 3 things and you&apos;re oriented</SectionTitle>
+          <div className="grid gap-2 text-sm text-dim md:grid-cols-3">
+            <div>
+              <span className="font-mono text-xs text-acc">01</span>{" "}
+              Read the <Link href="/guide" className="text-acc hover:underline">Field Manual</Link> — 5 minutes,
+              explains tiers, gates, and every screen.
+            </div>
+            <div>
+              <span className="font-mono text-xs text-acc">02</span>{" "}
+              Set your start date &amp; hours in <Link href="/settings" className="text-acc hover:underline">Settings</Link> to
+              boot the day counter.
+            </div>
+            <div>
+              <span className="font-mono text-xs text-acc">03</span>{" "}
+              Open <Link href="/today" className="text-acc hover:underline">Today</Link> and take the first ⚡ lesson.
+              The system handles the sequencing.
+            </div>
+          </div>
+        </Panel>
+      )}
 
       {/* answer WHAT DO I DO NEXT immediately */}
       <Panel accent="var(--acc-code)">

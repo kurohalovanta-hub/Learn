@@ -5,9 +5,29 @@ import { useState } from "react";
 import { NODES } from "@/content/nodes";
 import { useStore } from "@/lib/store";
 import { nodeState } from "@/lib/engine/graph";
-import { Bar, Panel, StateBadge, TierBadge } from "@/components/ui";
+import { WIDGETS } from "@/components/widgets/registry";
+import { Bar, Panel, SectionTitle, StateBadge, TierBadge } from "@/components/ui";
 import type { Lab } from "@/lib/types";
 import { tierAtLeast } from "@/lib/types";
+
+// The instrument bench: every interactive widget, playable outside its lesson.
+const INSTRUMENTS: { id: string; name: string; color: string; lesson: string }[] = [
+  { id: "vector-playground", name: "Vectors & Dot", color: "#4dd6e8", lesson: "l2-vectors" },
+  { id: "matrix-transform", name: "Matrix Machine", color: "#4dd6e8", lesson: "l2-matrices" },
+  { id: "derivative-explorer", name: "Derivative Limit", color: "#e8b34d", lesson: "l2-derivatives" },
+  { id: "gradient-descent", name: "Gradient Descent", color: "#e8b34d", lesson: "l2-optimization" },
+  { id: "gaussian-explorer", name: "Gaussian", color: "#e8b34d", lesson: "l6-kalman" },
+  { id: "backprop-graph", name: "Backprop Graph", color: "#a78bfa", lesson: "l3-backprop-theory" },
+  { id: "attention-vis", name: "Attention", color: "#a78bfa", lesson: "l4-attention" },
+  { id: "rotation-2d", name: "Frames 2-D", color: "#52d68a", lesson: "l5-frames-rotations" },
+  { id: "so3-explorer", name: "SO(3)", color: "#52d68a", lesson: "l5-lie-se3" },
+  { id: "planar-arm", name: "Planar Arm", color: "#52d68a", lesson: "l5-jacobians" },
+  { id: "pid-tuner", name: "PID Bench", color: "#52d68a", lesson: "l6-feedback-pid" },
+  { id: "kalman-1d", name: "Kalman 1-D", color: "#52d68a", lesson: "l6-kalman" },
+  { id: "gridworld-value", name: "Value Iteration", color: "#e86ea4", lesson: "l10-mdp" },
+  { id: "bc-drift", name: "BC Drift", color: "#e86ea4", lesson: "l11-bc-dagger" },
+  { id: "vla-flow", name: "VLA Anatomy", color: "#e86ea4", lesson: "l12-vla-anatomy" },
+];
 
 // The five lab lenses (HANDOVER §20) — views over the same graph.
 const LABS: { key: Lab; title: string; color: string; blurb: string }[] = [
@@ -31,6 +51,8 @@ export default function LabsPage() {
         <div className="mono-label">five lenses over one graph</div>
         <h1 className="font-mono text-2xl font-bold">LABS</h1>
       </div>
+
+      <InstrumentBench />
 
       <div className="flex flex-wrap gap-2">
         {LABS.map((l) => (
@@ -80,5 +102,37 @@ export default function LabsPage() {
         })}
       </div>
     </div>
+  );
+}
+
+function InstrumentBench() {
+  const [sel, setSel] = useState<string>("vector-playground");
+  const inst = INSTRUMENTS.find((i) => i.id === sel)!;
+  const Widget = WIDGETS[sel];
+  return (
+    <Panel accent={inst.color}>
+      <SectionTitle right={<Link href={`/learn/${inst.lesson}`} className="text-xs text-acc hover:underline">its lesson →</Link>}>
+        instrument bench — manipulate the mathematics directly
+      </SectionTitle>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {INSTRUMENTS.map((i) => (
+          <button
+            key={i.id}
+            onClick={() => setSel(i.id)}
+            className="rounded-md border px-2 py-1 font-mono text-[11px] transition-colors"
+            style={
+              sel === i.id
+                ? { borderColor: `${i.color}88`, color: i.color, background: `${i.color}14` }
+                : { borderColor: "var(--color-line2)", color: "var(--color-dim)", background: "var(--color-panel2)" }
+            }
+          >
+            {i.name}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-lg border border-line bg-panel2/40 p-3">
+        <Widget />
+      </div>
+    </Panel>
   );
 }
