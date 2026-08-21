@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useState } from "react";
 import { NODE_MAP } from "@/content/nodes";
-import { resourceById } from "@/content/resources";
 import { paperById } from "@/content/papers";
 import { projectById } from "@/content/projects";
 import { bossById } from "@/content/bosses";
@@ -15,10 +14,13 @@ import { nodeState, missingPrereqs, unlocks, DEFAULT_EDGE_TIER } from "@/lib/eng
 import { Katex, NodePill, Panel, SectionTitle, StateBadge, TierBadge, TIER_COLORS } from "@/components/ui";
 import { assessWithMoment } from "@/components/MasteryMoment";
 import { AssessmentBox } from "@/components/AssessmentBox";
+import { PacketRunner } from "@/components/PacketRunner";
 import { independenceFromChoice } from "@/lib/engine/competency";
-import { tierAtLeast, type ResourceBinding } from "@/lib/types";
+import { fallbackPacket } from "@/lib/packet-fallback";
+import type { LearningPacket } from "@/lib/packet-types";
+import { tierAtLeast } from "@/lib/types";
 
-export function NodeView({ id }: { id: string }) {
+export function NodeView({ id, packet }: { id: string; packet?: LearningPacket | null }) {
   const node = NODE_MAP.get(id);
   const store = useStore();
   if (!node) notFound();
@@ -29,6 +31,12 @@ export function NodeView({ id }: { id: string }) {
   const missing = missingPrereqs(node, progress);
   const boss = bossById(id);
   const dependents = unlocks(id);
+  const pk = packet ?? fallbackPacket(node);
+  const curated = !!packet;
+  const unverifiedPrereqs = node.prereqs
+    .map((pr) => ({ pr, prog: progress[pr.id] }))
+    .filter((x) => x.prog && tierAtLeast(x.prog.tier, x.pr.tier ?? DEFAULT_EDGE_TIER) && !x.prog.verified)
+    .map((x) => NODE_MAP.get(x.pr.id)?.title ?? x.pr.id);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -52,9 +60,15 @@ export function NodeView({ id }: { id: string }) {
                 {p.legacy ? "legacy claim — unverified" : "claimed — not yet verified"}
               </span>
             )}
-            <span className="font-mono text-xs text-faint">{node.hours}h est</span>
+            <span className="font-mono text-xs text-faint">packet ≈{Math.round(pk.minutes / 6) / 10}h</span>
             <span className="font-mono text-xs text-faint">gate: {node.masteryGate}</span>
           </div>
+          {unverifiedPrereqs.length > 0 && (
+            <div className="mt-1 text-[11px] text-faint">
+              built on unverified: {unverifiedPrereqs.slice(0, 3).join(" · ")}
+              {unverifiedPrereqs.length > 3 ? ` +${unverifiedPrereqs.length - 3}` : ""}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           {hasLesson(id) && (
@@ -73,10 +87,22 @@ export function NodeView({ id }: { id: string }) {
 
       {/* why */}
       <Panel accent={level.accent}>
-        <SectionTitle>why this exists</SectionTitle>
-        <p className="text-[14px] leading-relaxed text-ink">{node.why}</p>
-        {node.intuition && <p className="mt-2 text-sm text-dim">{node.intuition}</p>}
+        <SectionTitle>why now</SectionTitle>
+        <p className="text-[14px] leading-relaxed text-ink">{pk.whyNow}</p>
       </Panel>
+
+      {/* repair-class nodes lead with the test-out (Δ1: test out first, patch only gaps) */}
+      {pk.diagnostic?.repair && (
+        <Panel accent="#e8b34d">
+          <SectionTitle>test out first — only patch what breaks</SectionTitle>
+          <p className="text-sm text-dim">{pk.diagnostic.prompt}</p>
+          <p className="mt-1 mb-2 text-[11px] text-faint">
+            ~{pk.diagnostic.minutes} min. Pass → skip this node now. The path below is the patching
+            route for whatever the diagnostic exposes — never redo what you still own.
+          </p>
+          <AssessmentBox id={id} diagnostic />
+        </Panel>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
@@ -113,47 +139,11 @@ export function NodeView({ id }: { id: string }) {
             </Panel>
           )}
 
-          {/* resources */}
-          <Panel>
-            <SectionTitle>resources — exactly what to consume</SectionTitle>
-            <div className="space-y-3">
-              {node.primary && <ResourceRow binding={node.primary} role="primary" />}
-              {node.backup && <ResourceRow binding={node.backup} role="backup" />}
-              {node.references?.map((r, i) => <ResourceRow key={i} binding={r} role="reference" />)}
-              {!node.primary && !node.backup && (
-                <div className="text-sm text-faint">Self-contained — the work below IS the material.</div>
-              )}
-            </div>
-          </Panel>
-
-          {/* work */}
-          {(node.derivation || node.implementation || node.exercises.length > 0) && (
-            <Panel>
-              <SectionTitle>the work</SectionTitle>
-              {node.derivation && (
-                <div className="mb-3">
-                  <div className="mono-label mb-1 text-acc-math">derive</div>
-                  <p className="text-sm text-ink">{node.derivation}</p>
-                </div>
-              )}
-              {node.implementation && (
-                <div className="mb-3">
-                  <div className="mono-label mb-1 text-acc">implement</div>
-                  <p className="text-sm text-ink">{node.implementation}</p>
-                </div>
-              )}
-              {node.exercises.length > 0 && (
-                <div>
-                  <div className="mono-label mb-1 text-acc-robot">exercises</div>
-                  <ol className="list-decimal space-y-1.5 pl-5">
-                    {node.exercises.map((e, i) => (
-                      <li key={i} className="text-sm text-ink">{e}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </Panel>
-          )}
+          {/* the academy path (§19) */}
+          <div>
+            <div className="mono-label mb-2">the path — one step at a time</div>
+            <PacketRunner packet={pk} curated={curated} />
+          </div>
 
           {/* misconceptions */}
           {node.misconceptions && node.misconceptions.length > 0 && (
@@ -193,8 +183,6 @@ export function NodeView({ id }: { id: string }) {
             </Panel>
           )}
 
-          {/* mastery */}
-          <MasteryPanel id={id} locked={state === "locked"} />
         </div>
 
         {/* sidebar */}
@@ -285,71 +273,7 @@ export function NodeView({ id }: { id: string }) {
   );
 }
 
-function ResourceRow({ binding, role }: { binding: ResourceBinding; role: string }) {
-  const r = resourceById(binding.resourceId);
-  if (!r) return null;
-  const roleColor = role === "primary" ? "#4dd6e8" : role === "backup" ? "#e8b34d" : "#8b97a7";
-  return (
-    <div className="rounded-md border border-line bg-panel2 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider" style={{ color: roleColor, background: `${roleColor}14` }}>
-          {role}
-        </span>
-        <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-ink hover:text-acc">
-          {r.title} ↗
-        </a>
-        <span className="text-xs text-faint">{r.authors}{r.hours ? ` · ~${r.hours}h` : ""}{r.cost !== "free" ? ` · ${r.cost}` : ""}</span>
-      </div>
-      <div className="mt-1.5 text-[13px] text-dim">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-acc-robot">study → </span>
-        {binding.sections}
-      </div>
-      {r.skipParts && <div className="mt-1 text-xs text-faint">⊘ skip: {r.skipParts}</div>}
-      {binding.note && <div className="mt-1 text-xs text-faint">{binding.note}</div>}
-    </div>
-  );
-}
 
-function MasteryPanel({ id, locked }: { id: string; locked: boolean }) {
-  const store = useStore();
-  const node = NODE_MAP.get(id)!;
-  const p = store.nodes[id];
-  const unverifiedPrereqs = node.prereqs
-    .map((pr) => ({ pr, prog: store.nodes[pr.id] }))
-    .filter((x) => x.prog && tierAtLeast(x.prog.tier, x.pr.tier ?? DEFAULT_EDGE_TIER) && !x.prog.verified)
-    .map((x) => NODE_MAP.get(x.pr.id)?.title ?? x.pr.id);
-
-  return (
-    <Panel accent="#52d68a">
-      <SectionTitle>mastery gate — prove it, then it verifies</SectionTitle>
-      <p className="mb-1 text-sm text-dim">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-acc-robot">the bar → </span>
-        {node.masteryTest}
-      </p>
-      {p?.verified && (
-        <div className="mb-2 text-xs text-acc-robot">✓ Independently verified — an assessment plus a later review both held.</div>
-      )}
-      {p?.provisional && (
-        <div className="mb-2 text-xs text-acc-math">
-          {p.legacy
-            ? "This tier rests on a legacy claim from before the evidence system. Re-prove it below to verify."
-            : "Claimed — not yet verified. A review lands in ~2 days; passing it verifies this node."}
-        </div>
-      )}
-      {unverifiedPrereqs.length > 0 && (
-        <div className="mb-2 text-[11px] text-faint">
-          built on unverified: {unverifiedPrereqs.slice(0, 3).join(" · ")}
-          {unverifiedPrereqs.length > 3 ? ` +${unverifiedPrereqs.length - 3}` : ""}
-        </div>
-      )}
-      {locked ? (
-        <div className="text-xs text-faint">Locked — pass the prerequisite gates first (or prove them via their test-outs).</div>
-      ) : (
-        <AssessmentBox id={id} />
-      )}
-    </Panel>
-  );
-}
 
 function BossAttemptBox({ bossId }: { bossId: string }) {
   const store = useStore();

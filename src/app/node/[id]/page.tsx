@@ -1,4 +1,5 @@
 import { NODES, NODE_MAP } from "@/content/nodes";
+import { PACKET_REGISTRY } from "@/content/packets/registry";
 import { NodeView } from "./NodeView";
 
 export function generateStaticParams() {
@@ -14,5 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/node/[id]">) {
 
 export default async function Page({ params }: PageProps<"/node/[id]">) {
   const { id } = await params;
-  return <NodeView id={id} />;
+  const load = PACKET_REGISTRY[id];
+  const packet = load ? (await load()).packet : null;
+  return <NodeView id={id} packet={packet} />;
 }
