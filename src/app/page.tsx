@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { todaysMission, activeProject, researchModeActive } from "@/lib/engine/scheduler";
 import { dashboardStats, warnings } from "@/lib/engine/metrics";
-import { clusterScores, currentRank, nextRank, readinessScore, totalXp, levelCompletion } from "@/lib/engine/mastery";
+import { clusterScores, currentRank, nextRank, readinessScore, levelCompletion } from "@/lib/engine/mastery";
 import { dayOfProgram, currentPhase, pacingStatus } from "@/lib/engine/pacing";
 import { frontier, wouldUnlock, nodeState } from "@/lib/engine/graph";
 import { reviewQueue } from "@/lib/engine/review";
@@ -119,7 +119,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat label="streak" value={`${stats.streakDays}d`} accent="#f2934d" sub="6-day weeks" />
         <Stat label="focused hours" value={stats.focusedHoursTotal} sub={`${stats.focusedHours7d}h this week`} />
-        <Stat label="nodes mastered" value={`${stats.nodesMastered}`} sub={`${stats.goldPlus} at gold+`} accent="#52d68a" />
+        <Stat label="verified" value={`${stats.verifiedCount}`} sub={stats.provisionalCount > 0 ? `+${stats.provisionalCount} claimed, unverified` : "capabilities held"} accent="#52d68a" />
         <Stat label="independence" value={stats.independence != null ? `${stats.independence}%` : "—"} sub="last 30 days" accent="#4dd6e8" />
         <Stat label="papers deep-read" value={stats.papersRead} sub={`${stats.papersReproduced} reproduced`} accent="#a78bfa" />
         <Stat label="review due" value={reviews.length} sub="retrieval queue" accent={reviews.length > 10 ? "#f4586e" : "#8b97a7"} />
@@ -147,7 +147,7 @@ export default function Dashboard() {
           <div className="mt-4 border-t border-line pt-3">
             <div className="mono-label">rank {rank.index} · {rank.title}</div>
             {nxt && <div className="mt-1 text-xs text-dim">Next: <b className="text-ink">{nxt.title}</b> — {nxt.requires}</div>}
-            <div className="mt-1 font-mono text-xs text-acc-math">{totalXp(data.nodes).toLocaleString()} XP</div>
+            <div className="mt-1 text-[11px] text-faint">score counts verified capability at full value; unverified claims at half</div>
           </div>
         </Panel>
 

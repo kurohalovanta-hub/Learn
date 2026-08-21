@@ -15,7 +15,7 @@ const TIERS = [
 ];
 
 const SURFACES: { href: string; name: string; what: string; when: string }[] = [
-  { href: "/today", name: "Today", what: "Your day as a 7-step mission: UNDERSTAND → DERIVE → IMPLEMENT → APPLY → PROVE IT → CONNECT → SHIP. Steps reveal as you complete them.", when: "Start here every day. It picks your frontier work for you." },
+  { href: "/today", name: "Today", what: "One current bottleneck, one capability target, the next few steps of its learning packet (watch → recall → work → build → prove), and a stuck-path with AI-tutor buttons. Secondary rows (review, project) stay collapsed below.", when: "Start here every day. It picks the single highest-leverage thing and hides the rest." },
   { href: "/tree", name: "Skill Tree", what: "The full 149-node dependency graph. Tap any node — even a far one — to see how many gates away it is, with the path highlighted. ⚡ marks nodes with built-in interactive lessons.", when: "When you want to know where you are and why today's work matters." },
   { href: "/levels", name: "Levels", what: "The 17 levels (L0 terminal basics → L16 original research) as browsable lists with bosses.", when: "Planning a level push; checking what a boss requires." },
   { href: "/papers", name: "Paper Room", what: "The 63-paper ladder. Each paper has a study page: readiness check against your actual mastery, key equations, lineage, reproduction path — and Defense Mode, a closed-book interrogation.", when: "Papers unlock as their prerequisite nodes complete. Never read a paper the tree says you're not ready for — that's paper tourism." },
@@ -45,16 +45,18 @@ export default function GuidePage() {
           <li><span className="font-mono text-acc">1.</span> Open <Link href="/settings" className="text-acc hover:underline">Settings</Link> → set your start date and daily hours target. This boots the Day counter and the scheduler.</li>
           <li><span className="font-mono text-acc">2.</span> Open <Link href="/today" className="text-acc hover:underline">Today</Link>. It has already chosen your frontier — the brief tells you what you&apos;ll be able to do by tonight.</li>
           <li><span className="font-mono text-acc">3.</span> Work step 01. If the node has a <span className="text-acc">⚡ lesson</span>, take it in-app — lessons teach the full material with interactive math labs; external links are optional backup, not required reading.</li>
-          <li><span className="font-mono text-acc">4.</span> When you can pass a node&apos;s mastery test, claim the tier on its page. Honestly. The whole system is built on that honesty.</li>
+          <li><span className="font-mono text-acc">4.</span> When you can meet a node&apos;s stated bar, PROVE IT on its page: type a closed-book attempt, declare how you produced it, judge it honestly. Unlocks fire immediately; the claim becomes <b className="text-ink">verified</b> only after a short review a couple of days later holds.</li>
         </ol>
       </Panel>
 
       <Panel>
-        <SectionTitle>mastery tiers — the only currency</SectionTitle>
+        <SectionTitle>mastery tiers — derived from evidence, never self-set</SectionTitle>
         <p className="mb-3 text-sm text-dim">
-          Every node is claimed at a tier, by you, against its stated mastery test. Progress here means
-          capability, never time spent. Claims made with heavy AI assistance cap below Gold — the
-          system tracks independence because research demands it.
+          Tiers are computed from your evidence log — retrieval answers, practice, built artifacts, a
+          typed closed-book assessment, and delayed reviews. There is no button that sets a tier.
+          Attempts where AI produced the work cap at Silver; a claim counts as <b className="text-ink">verified</b> only
+          after a later review (or a transfer task) holds. Progress means capability, never time spent —
+          and the system is honest in both directions: forgetting demotes.
         </p>
         <div className="space-y-1.5">
           {TIERS.map((t) => (

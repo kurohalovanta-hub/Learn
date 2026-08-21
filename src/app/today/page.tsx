@@ -1,31 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { todaysMission } from "@/lib/engine/scheduler";
 import { reviewQueue } from "@/lib/engine/review";
 import { dayOfProgram, currentPhase } from "@/lib/engine/pacing";
 import { NODE_MAP } from "@/content/nodes";
-import { TUTOR_PROMPTS } from "@/content/templates";
-import { hasLesson, lessonMeta } from "@/content/lessons/manifest";
-import { Panel, SectionTitle } from "@/components/ui";
+import { PACKET_REGISTRY } from "@/content/packets/registry";
+import { hasLesson } from "@/content/lessons/manifest";
+import { unlocks } from "@/lib/engine/graph";
+import { fallbackPacket } from "@/lib/packet-fallback";
+import type { LearningPacket } from "@/lib/packet-types";
 import type { Block, Independence, SkillNode } from "@/lib/types";
+import { TutorBridge } from "@/components/TutorBridge";
+import { Panel } from "@/components/ui";
 
-const BLOCK_COLORS: Record<string, string> = {
-  math: "#e8b34d", implementation: "#4dd6e8", specialization: "#a78bfa",
-  project: "#52d68a", review: "#f2934d", papers: "#a78bfa", research: "#e86ea4",
-};
-
-interface StepDef {
-  id: string;
-  code: string;
-  title: string;
-  color: string;
-  minutes: number | null;
-  summary: string;
-  body: ReactNode;
-}
+// ONE objective (HANDOVERFINAL §30): the current bottleneck, its capability
+// target, the next few packet steps — and nothing else above the fold.
 
 export default function TodayPage() {
   const store = useStore();
@@ -35,359 +27,282 @@ export default function TodayPage() {
   const phase = day ? currentPhase(day) : null;
   const reviews = reviewQueue(data.nodes);
   const today = new Date().toISOString().slice(0, 10);
-  const plan = store.dayPlans[today]?.steps ?? {};
   const todayLogs = data.logs.filter((l) => l.date === today);
   const loggedMin = todayLogs.reduce((s, l) => s + l.minutes, 0);
 
-  const slotFor = (block: string) => mission.slots.find((s) => s.block === block);
-  const mathSlot = slotFor("math");
-  const implSlot = slotFor("implementation");
-  const specSlot = slotFor("specialization");
-  const projSlot = slotFor("project");
-  const focus = mission.masteryCheck;
+  // the bottleneck: most recently worked incomplete node, else the scheduler's pick
+  const bottleneck: SkillNode | null = useMemo(() => {
+    const recent = [...store.events].reverse().find((e) => {
+      const n = NODE_MAP.get(e.nodeId);
+      const p = store.nodes[e.nodeId];
+      return !!n && e.kind !== "manual-override" && (!p || p.status !== "mastered");
+    });
+    if (recent) return NODE_MAP.get(recent.nodeId) ?? null;
+    const slot = mission.slots.find((s) => s.node)?.node;
+    return slot ?? (mission.masteryCheck ? NODE_MAP.get(mission.masteryCheck.nodeId) ?? null : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.events, store.nodes]);
 
-  const nodeLine = (node: SkillNode | undefined, logBlock: Block, minutes: number) =>
-    node ? (
-      <div>
-        <Link href={`/node/${node.id}`} className="text-[15px] font-medium text-ink hover:text-acc">
-          {node.title}
-        </Link>
-        <div className="mt-0.5 text-xs text-dim">{node.why}</div>
-        {hasLesson(node.id) && (
-          <Link href={`/learn/${node.id}`} className="btn btn-acc mt-2 !py-1.5 text-xs">
-            ⚡ Open lesson · {lessonMeta(node.id)?.minutes} min
-          </Link>
-        )}
-        {!hasLesson(node.id) && node.primary && (
-          <div className="mt-1.5 text-xs text-faint">▸ {node.primary.sections}</div>
-        )}
-        <div className="mt-2"><QuickLog block={logBlock} nodeId={node.id} defaultMin={minutes} /></div>
-      </div>
-    ) : (
-      <div className="text-sm text-faint">This track&apos;s frontier is empty today — pull the time into another step.</div>
-    );
+  // curated packets load async; the loaded state is keyed by node id so a stale
+  // packet never renders for a new bottleneck (and no sync setState in the effect)
+  const [loaded, setLoaded] = useState<{ id: string; packet: LearningPacket } | null>(null);
+  useEffect(() => {
+    if (!bottleneck || !PACKET_REGISTRY[bottleneck.id]) return;
+    let alive = true;
+    PACKET_REGISTRY[bottleneck.id]().then((m) => {
+      if (alive) setLoaded({ id: bottleneck.id, packet: m.packet });
+    });
+    return () => { alive = false; };
+  }, [bottleneck]);
+  const packet = useMemo<LearningPacket | null>(() => {
+    if (!bottleneck) return null;
+    if (loaded?.id === bottleneck.id) return loaded.packet;
+    return PACKET_REGISTRY[bottleneck.id] ? null : fallbackPacket(bottleneck);
+  }, [bottleneck, loaded]);
 
-  const tutor = TUTOR_PROMPTS[(day ?? 1) % TUTOR_PROMPTS.length];
+  const ev = useMemo(
+    () => (bottleneck ? store.events.filter((e) => e.nodeId === bottleneck.id) : []),
+    [store.events, bottleneck],
+  );
+  const stepStates = useMemo(() => {
+    if (!packet) return [];
+    const has = (pred: (e: (typeof ev)[number]) => boolean) => ev.some(pred);
+    const allWatch = [...(packet.orient ? [packet.orient] : []), ...(packet.coreWatch ?? [])];
+    const out: { label: string; done: boolean }[] = [];
+    if (allWatch.length)
+      out.push({ label: `WATCH — ${allWatch.reduce((s, m) => s + m.minutes, 0)} min`, done: allWatch.every((m) => has((e) => e.kind === "exposure" && e.note === `watched:${m.url}`)) });
+    if (packet.recall?.length)
+      out.push({ label: `RECALL — ${packet.recall.length} questions`, done: packet.recall.every((_, i) => has((e) => e.kind === "retrieval" && e.note === `recall:${i}`)) });
+    if (packet.coreRead?.length)
+      out.push({ label: "READ — the exact sections", done: packet.coreRead.every((r) => has((e) => e.kind === "exposure" && e.note === `read:${r.title}`)) });
+    if (packet.practice.length)
+      out.push({ label: `WORK — ${packet.practice.length} practice blocks`, done: packet.practice.every((_, i) => has((e) => e.kind === "problem" && e.note === `practice:${i}`)) });
+    if (packet.implement || packet.derive)
+      out.push({
+        label: "BUILD / DERIVE",
+        done: (!packet.implement || has((e) => e.kind === "implementation" && e.note === "packet-build" && e.outcome === "pass")) &&
+              (!packet.derive || has((e) => e.kind === "derivation" && e.note === "packet-build" && e.outcome === "pass")),
+      });
+    out.push({ label: "PROVE IT — closed book", done: has((e) => e.kind === "assessment" && e.outcome === "pass") });
+    return out;
+  }, [packet, ev]);
 
-  const steps: StepDef[] = mission.researchMode
-    ? researchSteps(mission.slots, reviews.length)
-    : [
-        {
-          id: "s1", code: "01", title: "UNDERSTAND", color: "#e8b34d",
-          minutes: Math.max(30, (mathSlot?.minutes ?? 105) - 25),
-          summary: mathSlot?.node ? mathSlot.node.title : "today's theory frontier",
-          body: (
-            <div>
-              <p className="mb-2 text-xs text-dim">
-                New material first, while you&apos;re fresh. Work the lesson&apos;s intuition and formalism bands —
-                or the listed source sections — actively: pen out, predictions before reveals.
-              </p>
-              {nodeLine(mathSlot?.node, "math", Math.max(30, (mathSlot?.minutes ?? 105) - 25))}
-            </div>
-          ),
-        },
-        {
-          id: "s2", code: "02", title: "DERIVE", color: "#e8b34d", minutes: 25,
-          summary: "close the source, reproduce the math",
-          body: (
-            <div className="text-sm text-dim">
-              <p>
-                Close everything. On paper, reproduce today&apos;s central derivation or definitions from memory —
-                then reopen and diff. What you couldn&apos;t reproduce is what you haven&apos;t learned yet.
-              </p>
-              {mathSlot?.node && hasLesson(mathSlot.node.id) && (
-                <Link href={`/learn/${mathSlot.node.id}`} className="btn mt-2 !py-1.5 text-xs">
-                  Re-open the derivation band to check
-                </Link>
-              )}
-            </div>
-          ),
-        },
-        {
-          id: "s3", code: "03", title: "IMPLEMENT", color: "#4dd6e8",
-          minutes: implSlot?.minutes ?? 90,
-          summary: implSlot?.node ? implSlot.node.title : "code the idea",
-          body: (
-            <div>
-              <p className="mb-2 text-xs text-dim">
-                Theory becomes capability only in an editor. Type it yourself; the acceptance checks are the contract.
-              </p>
-              {nodeLine(implSlot?.node, "implementation", implSlot?.minutes ?? 90)}
-            </div>
-          ),
-        },
-        {
-          id: "s4", code: "04", title: "APPLY", color: "#a78bfa",
-          minutes: (specSlot?.minutes ?? 90) + (projSlot?.minutes ?? 0),
-          summary: specSlot?.node?.title ?? projSlot?.projectTitle ?? "specialization + project",
-          body: (
-            <div className="space-y-3">
-              {specSlot?.node && nodeLine(specSlot.node, "specialization", specSlot.minutes)}
-              <div className="border-t border-line/60 pt-3">
-                {projSlot?.projectTitle ? (
-                  <div>
-                    <Link href="/projects" className="text-[15px] font-medium text-ink hover:text-acc">
-                      {projSlot.projectTitle}
-                    </Link>
-                    {projSlot.projectStep && <div className="mt-0.5 text-xs text-dim">next: {projSlot.projectStep}</div>}
-                    <div className="mt-2"><QuickLog block="project" defaultMin={projSlot.minutes} /></div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-faint">{projSlot?.note ?? "No project unlocked yet — the ladder opens with Level 1 basics."}</div>
-                )}
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "s5", code: "05", title: "PROVE IT", color: "#52d68a", minutes: 30,
-          summary: focus ? `mastery check: ${focus.title}` : "mastery check + retrieval",
-          body: (
-            <div className="space-y-3">
-              {focus && (
-                <div>
-                  <div className="text-sm font-medium text-ink">{focus.title}</div>
-                  <p className="mt-1 text-sm text-dim">{focus.test}</p>
-                  <Link href={`/node/${focus.nodeId}`} className="btn btn-acc mt-2 !py-1.5 text-xs">
-                    Open node & claim tier
-                  </Link>
-                </div>
-              )}
-              <div className="border-t border-line/60 pt-2 text-sm">
-                <Link href="/review" className="text-acc hover:underline">
-                  {reviews.length === 0 ? "Review queue clear — free recall: yesterday's key result, closed book" : `${reviews.length} retrieval items due — closed book first`}
-                </Link>
-                <div className="mt-2"><QuickLog block="review" defaultMin={25} /></div>
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "s6", code: "06", title: "CONNECT", color: "#f2934d", minutes: 10,
-          summary: "place today inside the bigger map",
-          body: (
-            <div className="space-y-2 text-sm text-dim">
-              <p>
-                Three written sentences: where does today&apos;s concept reappear later in the graph, and in which
-                paper? (The lesson&apos;s connection block has the answer — write yours first, then compare.)
-              </p>
-              <div className="rounded-md border border-line bg-panel2 p-2.5">
-                <div className="text-xs font-medium text-ink">{tutor.title}</div>
-                <div className="mt-0.5 text-[11px] text-faint">{tutor.when}</div>
-                <p className="mt-1.5 font-mono text-[11px] leading-relaxed">{tutor.prompt}</p>
-                <button className="btn mt-1.5 !py-1 text-[11px]" onClick={() => navigator.clipboard?.writeText(tutor.prompt)}>Copy prompt</button>
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "s7", code: "07", title: "SHIP", color: "#e86ea4", minutes: 5,
-          summary: "what exists now that didn't this morning?",
-          body: <ShipBox />,
-        },
-      ];
+  const firstOpen = stepStates.findIndex((s) => !s.done);
+  const nextUnlock = bottleneck ? unlocks(bottleneck.id).find((d) => store.nodes[d.id]?.status !== "mastered") : null;
 
-  const doneCount = steps.filter((s) => plan[s.id]).length;
-  const firstOpen = steps.findIndex((s) => !plan[s.id]);
+  if (mission.researchMode) return <ResearchToday />;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      {/* ── MISSION BRIEF ─────────────────────────────────────────── */}
-      <Panel accent="#4dd6e8" className="relative overflow-hidden">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <div className="mono-label text-acc">{mission.researchMode ? "research loop · mission brief" : "mission brief"}</div>
-          <span className="font-mono text-[11px] text-faint">{new Date().toDateString()}</span>
+    <div className="mx-auto max-w-2xl space-y-4">
+      {/* header — quiet */}
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="mono-label">
+          day {day ? Math.min(day, 210) : 0}{phase ? ` · ${phase.title.toLowerCase()}` : ""}
         </div>
-        <h1 className="mt-1 font-mono text-2xl font-bold">
-          DAY {day ? Math.min(day, 210) : 0}
-          {phase && <span className="ml-3 text-sm font-normal text-dim">{phase.title}</span>}
-        </h1>
-        {focus && !mission.researchMode && (
-          <p className="mt-2 text-sm leading-relaxed text-dim">
-            <span className="text-faint">By tonight you can: </span>
-            <span className="text-ink">{focus.test}</span>
-          </p>
-        )}
-        {mission.researchMode && (
-          <p className="mt-2 text-sm text-dim">
-            One loop: hypothesize → run → measure → write. The experiment log entry is the deliverable.
-          </p>
-        )}
-        <div className="mt-3 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-panel2">
-            <div className="h-full rounded-full bg-acc transition-all duration-500" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
-          </div>
-          <span className="font-mono text-[11px] text-dim">{doneCount}/{steps.length} steps</span>
-          {loggedMin > 0 && <span className="font-mono text-[11px] text-acc">{(loggedMin / 60).toFixed(1)}h logged</span>}
-        </div>
-        {mission.blockers.length > 0 && (
-          <div className="mt-3 space-y-1 border-t border-line/60 pt-2.5">
-            {mission.blockers.map((b, i) => (
-              <div key={i} className="text-xs text-acc-math">⚠ {b}</div>
-            ))}
-          </div>
-        )}
-      </Panel>
+        <span className="font-mono text-[11px] text-faint">
+          {loggedMin > 0 ? `${(loggedMin / 60).toFixed(1)}h logged` : new Date().toDateString()}
+        </span>
+      </div>
 
-      {/* ── THE SEQUENCE ──────────────────────────────────────────── */}
-      <div className="space-y-2.5">
-        {steps.map((s, i) => (
-          <MissionStep
-            key={s.id}
-            step={s}
-            state={plan[s.id] ? "done" : i === firstOpen ? "active" : "later"}
-            onToggle={(done) => store.toggleMissionStep(today, s.id, done)}
+      {mission.blockers.length > 0 && (
+        <div className="space-y-1">
+          {mission.blockers.map((b, i) => (
+            <div key={i} className="rounded-md border border-acc-math/30 bg-acc-math/[0.06] px-3 py-2 text-xs text-acc-math">⚠ {b}</div>
+          ))}
+        </div>
+      )}
+
+      {bottleneck ? (
+        <Panel accent="#4dd6e8" className="!p-5">
+          <div className="mono-label text-acc">current bottleneck</div>
+          <h1 className="mt-1 text-xl font-bold tracking-tight">
+            <Link href={`/node/${bottleneck.id}`} className="hover:text-acc">{bottleneck.title}</Link>
+          </h1>
+          <div className="mt-3">
+            <div className="mono-label">today&apos;s capability target</div>
+            <p className="mt-0.5 text-[14px] leading-relaxed text-ink">{packet?.prove.task ?? bottleneck.masteryTest}</p>
+          </div>
+          <div className="mt-3">
+            <div className="mono-label">why now</div>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-dim">
+              {bottleneck.why}{" "}
+              {nextUnlock && <span className="text-faint">Blocks: {nextUnlock.title}.</span>}
+            </p>
+          </div>
+
+          {/* the steps — live from the packet runner's evidence */}
+          {stepStates.length > 0 && (
+            <div className="mt-4 space-y-1.5">
+              {stepStates.map((s, i) => (
+                <Link
+                  key={s.label}
+                  href={`/node/${bottleneck.id}`}
+                  className="flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors"
+                  style={{
+                    borderColor: i === firstOpen ? "#4dd6e855" : "var(--color-line)",
+                    opacity: s.done ? 0.55 : i === firstOpen ? 1 : 0.75,
+                    background: i === firstOpen ? "#4dd6e80a" : "transparent",
+                  }}
+                >
+                  <span className="font-mono text-[11px]" style={{ color: s.done ? "#52d68a" : "#4dd6e8" }}>
+                    {s.done ? "✓" : String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className={`font-mono text-[12px] tracking-wide ${s.done ? "text-faint line-through" : "text-ink"}`}>
+                    {s.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={`/node/${bottleneck.id}`} className="btn btn-acc">▶ Work the path</Link>
+            {hasLesson(bottleneck.id) && (
+              <Link href={`/learn/${bottleneck.id}`} className="btn">⚡ Lesson</Link>
+            )}
+          </div>
+
+          <div className="mt-4 border-t border-line/60 pt-3">
+            <div className="mono-label mb-1.5">stuck?</div>
+            <TutorBridge nodeId={bottleneck.id} compact />
+          </div>
+
+          {nextUnlock && (
+            <div className="mt-3 text-[11.5px] text-faint">
+              next unlock → <Link href={`/node/${nextUnlock.id}`} className="text-acc hover:underline">{nextUnlock.title}</Link>
+            </div>
+          )}
+        </Panel>
+      ) : (
+        <Panel accent="#4dd6e8" className="!p-5">
+          <div className="mono-label text-acc">boot</div>
+          <p className="mt-1 text-sm text-dim">
+            Set your start date in <Link href="/settings" className="text-acc hover:underline">Settings</Link>,
+            then open the first node — the system sequences everything from there.
+          </p>
+          <Link href="/tree" className="btn btn-acc mt-3">Open the tree</Link>
+        </Panel>
+      )}
+
+      {/* secondary — collapsed rows, never competing with the bottleneck */}
+      <div className="space-y-2">
+        <SecondaryRow
+          href="/review"
+          label={reviews.length > 0 ? `retrieval — ${reviews.length} due` : "retrieval — queue clear"}
+          hot={reviews.length > 0}
+          detail={reviews.length > 0 ? "Closed book first. Passing reviews is what verifies claims." : "Free recall: yesterday's key result."}
+        />
+        {mission.slots.find((s) => s.projectTitle) && (
+          <SecondaryRow
+            href="/projects"
+            label={`project — ${mission.slots.find((s) => s.projectTitle)?.projectTitle}`}
+            detail={mission.slots.find((s) => s.projectTitle)?.projectStep ?? ""}
           />
-        ))}
+        )}
+        {mission.slots
+          .filter((s) => s.node && s.node.id !== bottleneck?.id)
+          .slice(0, 1)
+          .map((s) => (
+            <SecondaryRow
+              key={s.node!.id}
+              href={`/node/${s.node!.id}`}
+              label={`parallel track — ${s.node!.title}`}
+              detail="Only after the bottleneck moved. Low cognitive interference by design."
+            />
+          ))}
       </div>
 
-      {doneCount === steps.length && (
-        <Panel accent="#52d68a" className="scale-in text-center">
-          <div className="font-mono text-sm font-bold tracking-widest text-acc-robot">MISSION COMPLETE</div>
-          <p className="mt-1 text-xs text-dim">
-            {(loggedMin / 60).toFixed(1)}h logged · {todayLogs.filter((l) => l.note?.startsWith("SHIP:")).length} shipped.
-            Tomorrow&apos;s frontier is already waiting on the tree.
-          </p>
-        </Panel>
-      )}
+      <ShipLine />
 
-      {/* logged today (compact) */}
       {todayLogs.length > 0 && (
-        <Panel>
-          <SectionTitle>logged today</SectionTitle>
-          <div className="space-y-1">
-            {todayLogs.map((l) => (
-              <div key={l.id} className="flex items-center justify-between text-xs">
-                <span className="text-dim">
-                  <span className="font-mono" style={{ color: BLOCK_COLORS[l.block] }}>{l.block}</span>
-                  {l.nodeId && <span className="ml-2 text-faint">{NODE_MAP.get(l.nodeId)?.title}</span>}
-                  {l.note && <span className="ml-2 text-acc-robot">{l.note}</span>}
-                </span>
-                <span className="flex items-center gap-2 font-mono text-faint">
-                  {l.minutes > 0 && `${l.minutes}m`}
-                  {l.independence && <span title="independence">· {l.independence.replace("_", " ")}</span>}
-                  <button onClick={() => store.deleteLog(l.id)} className="text-faint hover:text-acc-frontier">×</button>
-                </span>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      )}
-    </div>
-  );
-}
-
-/* ── a single progressive step ─────────────────────────────────────── */
-function MissionStep({
-  step, state, onToggle,
-}: {
-  step: StepDef;
-  state: "done" | "active" | "later";
-  onToggle: (done: boolean) => void;
-}) {
-  const [forceOpen, setForceOpen] = useState(false);
-  const open = state === "active" || forceOpen;
-
-  return (
-    <div
-      className={`overflow-hidden rounded-lg border transition-colors ${
-        state === "active" ? "border-line2 bg-panel" : "border-line bg-panel/60"
-      }`}
-      style={state === "active" ? { borderLeftColor: step.color, borderLeftWidth: 3 } : { opacity: state === "later" && !forceOpen ? 0.55 : 1 }}
-    >
-      <button
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-        onClick={() => (state === "active" ? undefined : setForceOpen(!forceOpen))}
-        aria-expanded={open}
-      >
-        <span
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border font-mono text-[10px] font-bold"
-          style={{
-            borderColor: state === "done" ? "#52d68a66" : `${step.color}55`,
-            color: state === "done" ? "#52d68a" : step.color,
-            background: state === "done" ? "#52d68a12" : "transparent",
-          }}
-        >
-          {state === "done" ? "✓" : step.code}
-        </span>
-        <span className="flex min-w-0 flex-1 items-baseline gap-2">
-          <span className={`shrink-0 font-mono text-[12px] font-bold tracking-wider ${state === "done" ? "text-faint line-through" : "text-ink"}`}>
-            {step.title}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-xs text-dim">{step.summary}</span>
-        </span>
-        {step.minutes != null && (
-          <span className="shrink-0 font-mono text-[10.5px] text-faint">~{step.minutes}m</span>
-        )}
-      </button>
-
-      {open && (
-        <div className="border-t border-line/60 px-4 py-3.5 pl-[52px] rise-in">
-          {step.body}
-          <div className="mt-3 border-t border-line/40 pt-2.5">
-            <button
-              className={state === "done" ? "btn !py-1.5 text-xs" : "btn btn-acc !py-1.5 text-xs"}
-              onClick={() => onToggle(state !== "done")}
-            >
-              {state === "done" ? "↺ reopen step" : `✓ ${step.title} complete`}
-            </button>
-          </div>
+        <div className="space-y-1 px-1">
+          {todayLogs.map((l) => (
+            <div key={l.id} className="flex items-center justify-between text-[11.5px] text-faint">
+              <span>
+                {l.block}{l.nodeId ? ` · ${NODE_MAP.get(l.nodeId)?.title}` : ""}{l.note ? ` · ${l.note}` : ""}
+              </span>
+              <span className="flex items-center gap-2 font-mono">
+                {l.minutes > 0 && `${l.minutes}m`}
+                <button onClick={() => store.deleteLog(l.id)} className="hover:text-acc-frontier">×</button>
+              </span>
+            </div>
+          ))}
         </div>
       )}
+      <QuickLogRow nodeId={bottleneck?.id} />
     </div>
   );
 }
 
-function researchSteps(
-  slots: { block: string; label: string; minutes: number; hint: string; reviewCount?: number }[],
-  reviewCount: number,
-): StepDef[] {
-  const codes = ["01", "02", "03", "04", "05"];
-  const titles = ["READ", "EXPERIMENT", "WRITE", "REVIEW", "SHIP"];
-  const defs: StepDef[] = slots.slice(0, 4).map((s, i) => ({
-    id: `r${i + 1}`,
-    code: codes[i],
-    title: titles[i] ?? s.label.toUpperCase(),
-    color: BLOCK_COLORS[s.block] ?? "#4dd6e8",
-    minutes: s.minutes,
-    summary: s.hint,
-    body: (
-      <div className="text-sm text-dim">
-        <p>{s.hint}</p>
-        {s.block === "review" && (
-          <Link href="/review" className="btn mt-2 !py-1.5 text-xs">
-            {reviewCount > 0 ? `${reviewCount} items due` : "Queue clear — free recall instead"}
-          </Link>
-        )}
-        {s.block === "research" && (
-          <Link href="/experiments" className="btn mt-2 !py-1.5 text-xs">Open experiment tracker</Link>
-        )}
-        {s.block === "papers" && (
-          <Link href="/papers" className="btn mt-2 !py-1.5 text-xs">Open paper ladder</Link>
-        )}
-        <div className="mt-2"><QuickLog block={s.block as Block} defaultMin={s.minutes} /></div>
+function SecondaryRow({ href, label, detail, hot }: { href: string; label: string; detail: string; hot?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className="block rounded-md border px-3.5 py-2.5 transition-colors hover:border-acc/40"
+      style={{ borderColor: hot ? "#f2934d44" : "var(--color-line)", opacity: hot ? 1 : 0.8 }}
+    >
+      <div className={`font-mono text-[12px] ${hot ? "text-acc-review" : "text-dim"}`} style={hot ? { color: "#f2934d" } : undefined}>
+        {label}
       </div>
-    ),
-  }));
-  defs.push({
-    id: "r5", code: "05", title: "SHIP", color: "#e86ea4", minutes: 5,
-    summary: "the log entry is the deliverable",
-    body: <ShipBox />,
-  });
-  return defs;
+      {detail && <div className="mt-0.5 text-[11.5px] text-faint">{detail}</div>}
+    </Link>
+  );
 }
 
-function QuickLog({ block, nodeId, defaultMin }: { block: Block; nodeId?: string; defaultMin: number }) {
+function ResearchToday() {
+  const store = useStore();
+  const data = store.exportData();
+  const day = dayOfProgram(data.settings);
+  const open = data.experiments.find((e) => e.status === "running") ?? data.experiments.find((e) => e.status === "planned");
+  const paper = Object.entries(data.papers).find(([, p]) => ["reading", "deriving", "reproducing"].includes(p.status));
+  const reviews = reviewQueue(data.nodes);
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mono-label">day {day ?? "—"} · research loop</div>
+      <Panel accent="#e86ea4" className="!p-5">
+        <div className="mono-label text-acc-frontier">the loop — hypothesize → run → measure → write</div>
+        {open ? (
+          <div className="mt-2">
+            <div className="text-[15px] font-semibold text-ink">{open.title || "(untitled experiment)"}</div>
+            <p className="mt-1 text-[13px] text-dim">{open.hypothesis || "No hypothesis written — that is today's first task."}</p>
+            <Link href="/experiments" className="btn btn-acc mt-3">Open experiment</Link>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <p className="text-sm text-acc-math">No planned or running experiment. Pre-register the next one before anything else — the log entry is the deliverable.</p>
+            <Link href="/experiments" className="btn btn-acc mt-3">Pre-register</Link>
+          </div>
+        )}
+        <div className="mt-4 space-y-1.5 border-t border-line/60 pt-3 text-[12.5px] text-dim">
+          <div>▸ <b className="text-ink">Read/think 45m</b>{paper ? <> — continue <Link className="text-acc hover:underline" href={`/papers/${paper[0]}`}>{paper[0]}</Link></> : " — pick from the ladder"}</div>
+          <div>▸ <b className="text-ink">Write</b> — the report grows a little every day; claims tied to evidence.</div>
+          <div>▸ <b className="text-ink">Review {reviews.length > 0 ? `(${reviews.length} due)` : ""}</b> — <Link className="text-acc hover:underline" href="/review">keep the foundations warm</Link>.</div>
+        </div>
+      </Panel>
+      <ShipLine />
+    </div>
+  );
+}
+
+function QuickLogRow({ nodeId }: { nodeId?: string }) {
   const addLog = useStore((s) => s.addLog);
   const [open, setOpen] = useState(false);
-  const [min, setMin] = useState(defaultMin);
+  const [min, setMin] = useState(60);
+  const [block, setBlock] = useState<Block>("math");
   const [indep, setIndep] = useState<Independence>("independent");
-
   if (!open)
-    return <button className="btn shrink-0 !py-1 text-xs" onClick={() => setOpen(true)}>✓ log time</button>;
+    return (
+      <button className="btn w-full justify-center !py-2 text-xs" onClick={() => setOpen(true)}>
+        ✓ log focused time
+      </button>
+    );
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-line p-2.5">
       <input type="number" value={min} min={5} step={5} onChange={(e) => setMin(Number(e.target.value))} className="!w-20 !py-1 text-center font-mono text-xs" />
+      <select value={block} onChange={(e) => setBlock(e.target.value as Block)} className="!w-auto !py-1 text-xs">
+        {["math", "implementation", "specialization", "project", "review", "papers", "research"].map((b) => <option key={b} value={b}>{b}</option>)}
+      </select>
       <select value={indep} onChange={(e) => setIndep(e.target.value as Independence)} className="!w-auto !py-1 text-xs">
         <option value="independent">independent</option>
         <option value="hints">hint-assisted</option>
@@ -408,44 +323,26 @@ function QuickLog({ block, nodeId, defaultMin }: { block: Block; nodeId?: string
   );
 }
 
-function ShipBox() {
+function ShipLine() {
   const store = useStore();
   const [note, setNote] = useState("");
   const today = new Date().toISOString().slice(0, 10);
+  const ships = store.logs.filter((l) => l.date === today && l.note?.startsWith("SHIP:"));
+  const ship = () => {
+    if (!note.trim()) return;
+    store.addLog({ date: today, minutes: 0, block: "project", note: `SHIP: ${note.trim()}` });
+    setNote("");
+  };
   return (
-    <div>
-      <p className="mb-2 text-xs text-dim">
-        Name one artifact that exists now and didn&apos;t this morning — a commit, a passing test, a derivation page, a paragraph.
-        No artifact = the day isn&apos;t done yet.
-      </p>
+    <div className="rounded-md border border-line p-3">
+      <div className="mono-label mb-1.5">ship — what exists now that didn&apos;t this morning?</div>
       <div className="flex gap-2">
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && note.trim()) {
-              store.addLog({ date: today, minutes: 0, block: "project", note: `SHIP: ${note.trim()}` });
-              setNote("");
-            }
-          }}
-          placeholder="e.g. 'IK benchmark green at 96% — committed pandakin@4f2a1'"
-        />
-        <button
-          className="btn btn-acc shrink-0"
-          disabled={!note.trim()}
-          onClick={() => {
-            store.addLog({ date: today, minutes: 0, block: "project", note: `SHIP: ${note.trim()}` });
-            setNote("");
-          }}
-        >
-          Ship it
-        </button>
+        <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ship()} placeholder="a commit, a passing check, a derivation page…" />
+        <button className="btn shrink-0 !py-1.5 text-xs" disabled={!note.trim()} onClick={ship}>Ship</button>
       </div>
-      <div className="mt-2 space-y-0.5">
-        {store.logs.filter((l) => l.date === today && l.note?.startsWith("SHIP:")).map((l) => (
-          <div key={l.id} className="text-xs text-acc-robot">▸ {l.note?.slice(6)}</div>
-        ))}
-      </div>
+      {ships.map((l) => (
+        <div key={l.id} className="mt-1 text-xs text-acc-robot">▸ {l.note?.slice(6)}</div>
+      ))}
     </div>
   );
 }
