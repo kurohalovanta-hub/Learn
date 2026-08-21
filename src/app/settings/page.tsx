@@ -15,14 +15,26 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(store.exportData(), null, 2)], { type: "application/json" });
+  const download = (name: string, content: string, type: string) => {
+    const blob = new Blob([content], { type });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `ei-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
   };
+  const stamp = () => new Date().toISOString().slice(0, 10);
+  const exportJson = () => download(`ei-progress-${stamp()}.json`, JSON.stringify(store.exportData(), null, 2), "application/json");
+  const exportEverything = async () => {
+    const { buildLearnerStateJson, buildLearnerStateMarkdown, buildHandoffMarkdown } = await import("@/lib/learner-state");
+    const data = store.exportData();
+    download(`ei-progress-${stamp()}.json`, JSON.stringify(data, null, 2), "application/json");
+    download(`CURRENT_STATE-${stamp()}.md`, buildLearnerStateMarkdown(data), "text/markdown");
+    download(`current-state-${stamp()}.json`, JSON.stringify(buildLearnerStateJson(data), null, 2), "application/json");
+    download(`HANDOFF-${stamp()}.md`, buildHandoffMarkdown(data), "text/markdown");
+    setMsg("Exported 4 files: full backup + tutor-readable state + handoff. Store them privately — they are yours, not the repo's.");
+  };
+  const dataBytes = new Blob([JSON.stringify(store.exportData())]).size;
 
   const importJson = (file: File) => {
     const reader = new FileReader();
@@ -177,11 +189,19 @@ export default function SettingsPage() {
       <Panel>
         <SectionTitle>backup / restore</SectionTitle>
         <div className="flex flex-wrap gap-2">
-          <button className="btn btn-acc" onClick={exportJson}>⬇ Export progress JSON</button>
+          <button className="btn btn-acc" onClick={exportEverything}>⬇ Export everything</button>
+          <button className="btn" onClick={exportJson}>⬇ JSON only</button>
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import (merge-replace)</button>
           <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && importJson(e.target.files[0])} />
         </div>
-        <p className="mt-2 text-xs text-faint">Export weekly regardless of sync — a file you hold beats every cloud.</p>
+        <p className="mt-2 text-xs text-faint">
+          &quot;Everything&quot; = full backup + CURRENT_STATE.md / current-state.json / HANDOFF.md — the
+          provider-neutral tutor snapshot (paste into any fresh Claude/ChatGPT session). Downloads only:
+          nothing is auto-committed to the public repo. Export weekly — a file you hold beats every cloud.
+        </p>
+        <p className="mt-1 font-mono text-[11px] text-faint">
+          data size: {(dataBytes / 1024).toFixed(0)} KB{dataBytes > 2 * 1024 * 1024 ? " — large; export now and keep the habit" : ""} · evidence events: {store.events.length}
+        </p>
       </Panel>
 
       {/* danger */}
