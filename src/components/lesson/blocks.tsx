@@ -18,6 +18,22 @@ import { Markdown } from "./Markdown";
 import { WIDGETS } from "../widgets/registry";
 import { MasteryClaim } from "./MasteryClaim";
 
+/** Inline text with $…$ math — for option labels and short strings inside buttons. */
+function MathText({ children }: { children: string }) {
+  const parts = children.split(/(\$[^$]+\$)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.length > 2 && p.startsWith("$") && p.endsWith("$") ? (
+          <Katex key={i} tex={p.slice(1, -1)} />
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export function BlockRenderer({
   block, node, sectionId, index,
 }: {
@@ -233,7 +249,7 @@ function CodeExercise({ block, checkId, nodeId }: { block: CodeBlockSpec; checkI
                     color: "var(--color-ink)",
                   }}
                 >
-                  {o}
+                  <MathText>{o}</MathText>
                 </button>
               );
             })}
@@ -338,7 +354,7 @@ function QuizItem({
                       background: revealed && isAnswer ? "#52d68a12" : isChosen ? "#f4586e10" : "var(--color-panel2)",
                     }}
                   >
-                    {o}
+                    <MathText>{o}</MathText>
                   </button>
                 );
               })}
