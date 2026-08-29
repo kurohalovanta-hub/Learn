@@ -120,6 +120,7 @@ export async function streamClaude(
   system: string,
   messages: TutorMessage[],
   apiKey: string,
+  model?: string,
 ): Promise<StreamResult> {
   const clipped = clip(messages);
 
@@ -131,7 +132,7 @@ export async function streamClaude(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: TUTOR_MODEL(),
+      model: model ?? TUTOR_MODEL(),
       max_tokens: MAX_REPLY_TOKENS,
       system,
       messages: clipped,
@@ -206,6 +207,7 @@ export async function streamOpenAI(
   system: string,
   messages: TutorMessage[],
   apiKey: string,
+  model?: string,
 ): Promise<StreamResult> {
   const clipped = clip(messages);
 
@@ -216,7 +218,7 @@ export async function streamOpenAI(
       authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: TUTOR_OPENAI_MODEL(),
+      model: model ?? TUTOR_OPENAI_MODEL(),
       max_output_tokens: MAX_REPLY_TOKENS,
       instructions: system,
       input: clipped,

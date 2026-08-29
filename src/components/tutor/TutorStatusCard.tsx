@@ -8,15 +8,17 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AIConnect } from "@/components/tutor/AIConnect";
 
-type Backend = "your-claude" | "your-chatgpt" | "cli" | "deployment";
+type Backend = "bridge-claude" | "bridge-codex" | "your-claude" | "your-chatgpt" | "cli" | "deployment";
 type Status =
   | { state: "checking" }
   | { state: "connected"; backend: Backend }
   | { state: "off"; reason: string };
 
 const BACKEND_LABEL: Record<Backend, string> = {
-  "your-claude": "your Claude connection",
-  "your-chatgpt": "your ChatGPT connection",
+  "bridge-claude": "your Claude Code subscription (via your bridge)",
+  "bridge-codex": "your ChatGPT Codex subscription (via your bridge)",
+  "your-claude": "your Claude key",
+  "your-chatgpt": "your ChatGPT key",
   "cli": "your Claude Code subscription (this machine)",
   "deployment": "this deployment's shared key",
 };

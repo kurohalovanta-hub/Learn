@@ -62,7 +62,9 @@ function TeacherAvatar({ state }: { state: "idle" | "thinking" | "speaking" }) {
 export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?: string }) {
   const store = useStore();
   const [avail, setAvail] = useState<Availability>("checking");
-  const [backend, setBackend] = useState<"your-claude" | "your-chatgpt" | "cli" | "deployment" | null>(null);
+  const [backend, setBackend] = useState<"bridge-claude" | "bridge-codex" | "your-claude" | "your-chatgpt" | "cli" | "deployment" | null>(null);
+  const [models, setModels] = useState<string[]>([]);
+  const [model, setModel] = useState<string>("");
   const [mode, setMode] = useState<TutorMode>("teach");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [chips, setChips] = useState<string[]>([]);
@@ -80,10 +82,16 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
     let alive = true;
     fetch("/api/tutor")
       .then((r) => r.json())
-      .then((j: { available?: boolean; reason?: string; backend?: "your-claude" | "your-chatgpt" | "cli" | "deployment" }) => {
+      .then((j: { available?: boolean; reason?: string; models?: string[]; backend?: "bridge-claude" | "bridge-codex" | "your-claude" | "your-chatgpt" | "cli" | "deployment" }) => {
         if (!alive) return;
         setAvail(j.available ? "ready" : j.reason === "sign-in" ? "unauthed" : j.reason === "connect" ? "connect" : "no-key");
         setBackend(j.backend ?? null);
+        const ms = j.models ?? [];
+        setModels(ms);
+        try {
+          const saved = localStorage.getItem(`halo-model-${j.backend}`);
+          setModel(saved && ms.includes(saved) ? saved : "");
+        } catch { /* storage may be blocked */ }
       })
       .catch(() => { if (alive) setAvail("no-key"); });
     return () => { alive = false; };
@@ -125,7 +133,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
         headers: { "content-type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          nodeId, mode,
+          nodeId, mode, ...(model ? { model } : {}),
           context: buildLearnerContext(nodeId, { nodes: store.nodes, events: store.events, logs: store.logs }, bottleneck),
           messages: history,
         }),
@@ -232,11 +240,30 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
             {streaming
               ? (speaking ? "explaining…" : "thinking…")
               : `grounded in this node's curated materials — ask anything${
-                  backend === "your-claude" ? " · your Claude" :
-                  backend === "your-chatgpt" ? " · your ChatGPT" :
+                  backend === "bridge-claude" ? " · your Claude Code (bridge)" :
+                  backend === "bridge-codex" ? " · your ChatGPT Codex (bridge)" :
+                  backend === "your-claude" ? " · your Claude key" :
+                  backend === "your-chatgpt" ? " · your ChatGPT key" :
                   backend === "cli" ? " · your Claude Code subscription" : ""}`}
           </div>
         </div>
+        {models.length > 0 && (
+          <select
+            value={model}
+            onChange={(e) => {
+              setModel(e.target.value);
+              try { localStorage.setItem(`halo-model-${backend}`, e.target.value); } catch { /* fine */ }
+            }}
+            disabled={streaming}
+            className="!w-auto !py-1 font-mono !text-[11.5px]"
+            aria-label="model"
+          >
+            <option value="">model: auto</option>
+            {models.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        )}
         <select
           value={mode}
           onChange={(e) => setMode(e.target.value as TutorMode)}

@@ -1,4 +1,9 @@
 # HANDOVER — EMBODIED // OS
+> **2026-08-29: partially superseded.** The project is now **HALO (PROJECT : VANTA HALO)** —
+> accounts are live, the tutor is in-app, and operations moved to the RDP.
+> **Read `HANDOVER-RDP.md` first**; this document remains the deep reference for the
+> original build, curriculum, and auth internals.
+
 **Resume-here document.** Everything needed to pick this project up on a local machine.
 
 - **Repo:** `https://github.com/kurohalovanta-hub/Learn`

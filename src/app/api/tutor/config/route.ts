@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     anthropic: !!keys.anthropic,
     openai: !!keys.openai,
     prefer: keys.prefer ?? "anthropic",
+    bridge: keys.bridge ?? "claude",
   });
 }
 
@@ -30,6 +31,13 @@ export async function PUT(req: Request) {
   }
 
   const keys = await loadAIKeys(ctx.redis, ctx.user.username);
+
+  if ((body as { bridge?: string }).bridge !== undefined) {
+    const b = (body as { bridge?: string }).bridge;
+    if (b !== "claude" && b !== "codex") return Response.json({ error: "bridge must be claude or codex" }, { status: 400 });
+    await saveAIKeys(ctx.redis, ctx.user.username, { ...keys, bridge: b });
+    return Response.json({ ok: true });
+  }
 
   if (body.prefer !== undefined) {
     if (!isProvider(body.prefer)) return Response.json({ error: "prefer must be anthropic or openai" }, { status: 400 });

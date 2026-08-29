@@ -41,6 +41,7 @@ function serializeConversation(messages: TutorMessage[]): string {
 export function streamClaudeCli(
   system: string,
   messages: TutorMessage[],
+  model?: string,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
 
@@ -56,6 +57,7 @@ export function streamClaudeCli(
           "--max-turns", "1",
           "--tools", "",
           "--system-prompt", system,
+          ...(model ? ["--model", model] : []),
         ],
         { env: cliEnv(), stdio: ["pipe", "pipe", "pipe"] },
       );

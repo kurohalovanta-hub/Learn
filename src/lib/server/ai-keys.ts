@@ -11,6 +11,8 @@ export interface AIKeys {
   anthropic?: string;
   openai?: string;
   prefer?: AIProvider;
+  /** Which engine the learner's bridge should answer with. */
+  bridge?: "claude" | "codex";
 }
 
 const AI_KEY = (u: string) => `ai:${u}`;
