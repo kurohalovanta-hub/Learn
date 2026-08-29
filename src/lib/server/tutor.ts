@@ -197,8 +197,10 @@ export async function streamClaude(
   return { ok: true, stream };
 }
 
-/** Same contract as streamClaude, but through the learner's own OpenAI key. */
-export const TUTOR_OPENAI_MODEL = () => process.env.TUTOR_OPENAI_MODEL ?? "gpt-5";
+/** Same contract as streamClaude, but through the learner's own OpenAI key.
+ * Uses the Responses API (recommended for all new integrations, verified
+ * 2026-08-29) with gpt-5.6-terra as the balanced default. */
+export const TUTOR_OPENAI_MODEL = () => process.env.TUTOR_OPENAI_MODEL ?? "gpt-5.6-terra";
 
 export async function streamOpenAI(
   system: string,
@@ -207,7 +209,7 @@ export async function streamOpenAI(
 ): Promise<StreamResult> {
   const clipped = clip(messages);
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -215,8 +217,9 @@ export async function streamOpenAI(
     },
     body: JSON.stringify({
       model: TUTOR_OPENAI_MODEL(),
-      max_completion_tokens: MAX_REPLY_TOKENS,
-      messages: [{ role: "system", content: system }, ...clipped],
+      max_output_tokens: MAX_REPLY_TOKENS,
+      instructions: system,
+      input: clipped,
       stream: true,
     }),
   });
@@ -248,11 +251,14 @@ export async function streamOpenAI(
           buf = lines.pop() ?? "";
           for (const line of lines) {
             const data = line.startsWith("data:") ? line.slice(5).trim() : null;
-            if (!data || data === "[DONE]") continue;
+            if (!data) continue;
             try {
-              const evt = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] };
-              const chunk = evt.choices?.[0]?.delta?.content;
-              if (chunk) controller.enqueue(encoder.encode(chunk));
+              const evt = JSON.parse(data) as { type?: string; delta?: string; error?: { message?: string } };
+              if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
+                controller.enqueue(encoder.encode(evt.delta));
+              } else if (evt.type === "response.failed" || evt.type === "error") {
+                controller.enqueue(encoder.encode(`\n\n⚠ tutor stream error: ${evt.error?.message ?? "unknown"}`));
+              }
             } catch { /* ignore keep-alives */ }
           }
         }
