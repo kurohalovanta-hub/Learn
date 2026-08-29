@@ -1,6 +1,9 @@
 // Live tutor route (ADR-005). GET = availability probe; POST = streamed reply.
-// Production requires an approved session (Redis) — a keyed but accountless
-// public deployment must not expose someone's API credit to the internet.
+// Two backends, local CLI preferred:
+//  - "cli": the learner's own Claude Code CLI (subscription-powered, local runs
+//    only — dev or TUTOR_USE_CLAUDE_CLI=1; never exists on Vercel)
+//  - "api": ANTHROPIC_API_KEY; in production it requires an approved session
+//    (Redis) so a keyed public deployment never exposes someone's credit.
 
 import { NODE_MAP } from "@/content/nodes";
 import { getRedis, rateLimit, requireSession } from "@/lib/server/auth";
@@ -8,6 +11,7 @@ import {
   buildGrounding, buildSystemPrompt, streamClaude,
   TUTOR_DAILY_LIMIT, tutorKeySet, type TutorMessage,
 } from "@/lib/server/tutor";
+import { claudeCliAvailable, streamClaudeCli } from "@/lib/server/tutor-cli";
 import type { TutorMode } from "@/lib/tutor";
 
 export const maxDuration = 60;
@@ -17,31 +21,35 @@ const DEV = process.env.NODE_ENV === "development";
 const MODES = new Set<TutorMode>(["teach", "diagnose", "socratic", "practice", "debug", "examine", "defense", "critic"]);
 
 export async function GET() {
+  if (claudeCliAvailable()) {
+    return Response.json({ available: true, backend: "cli" });
+  }
   if (!tutorKeySet()) {
     return Response.json({ available: false, reason: "no-key" });
   }
   if (!getRedis() && !DEV) {
     return Response.json({ available: false, reason: "needs-accounts" });
   }
-  return Response.json({ available: true });
+  return Response.json({ available: true, backend: "api" });
 }
 
 export async function POST(req: Request) {
-  if (!tutorKeySet()) {
-    return Response.json({ error: "Tutor not configured (ANTHROPIC_API_KEY missing)." }, { status: 501 });
-  }
+  const useCli = claudeCliAvailable();
 
-  let username = "dev";
-  const redis = getRedis();
-  if (redis) {
-    const ctx = await requireSession(req);
-    if (ctx instanceof Response) return ctx;
-    username = ctx.user.username;
-    if (!(await rateLimit(redis, `tutor:${username}`, TUTOR_DAILY_LIMIT(), 86_400))) {
-      return Response.json({ error: "Daily tutor budget reached — resets within 24h." }, { status: 429 });
+  if (!useCli) {
+    if (!tutorKeySet()) {
+      return Response.json({ error: "Tutor not configured — run the app locally with Claude Code installed, or set ANTHROPIC_API_KEY." }, { status: 501 });
     }
-  } else if (!DEV) {
-    return Response.json({ error: "Tutor requires accounts in production — attach Redis first." }, { status: 501 });
+    const redis = getRedis();
+    if (redis) {
+      const ctx = await requireSession(req);
+      if (ctx instanceof Response) return ctx;
+      if (!(await rateLimit(redis, `tutor:${ctx.user.username}`, TUTOR_DAILY_LIMIT(), 86_400))) {
+        return Response.json({ error: "Daily tutor budget reached — resets within 24h." }, { status: 429 });
+      }
+    } else if (!DEV) {
+      return Response.json({ error: "Tutor requires accounts in production — attach Redis first." }, { status: 501 });
+    }
   }
 
   let body: { nodeId?: string; mode?: string; context?: string; messages?: TutorMessage[] };
@@ -67,15 +75,18 @@ export async function POST(req: Request) {
 
   const grounding = await buildGrounding(nodeId);
   if (!grounding) return Response.json({ error: "could not load node materials" }, { status: 500 });
+  const system = buildSystemPrompt(nodeId, mode, context, grounding);
 
-  const result = await streamClaude(buildSystemPrompt(nodeId, mode, context, grounding), messages);
+  const headers = {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store",
+    "x-accel-buffering": "no",
+  };
+
+  if (useCli) {
+    return new Response(streamClaudeCli(system, messages), { headers });
+  }
+  const result = await streamClaude(system, messages);
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-
-  return new Response(result.stream, {
-    headers: {
-      "content-type": "text/plain; charset=utf-8",
-      "cache-control": "no-store",
-      "x-accel-buffering": "no",
-    },
-  });
+  return new Response(result.stream, { headers });
 }

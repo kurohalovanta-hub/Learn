@@ -22,7 +22,13 @@ interface Msg {
   content: string;
 }
 
-const OPTS_RE = /\[\[opts:([^\]]+)\]\]\s*$/;
+// tolerate the options line landing anywhere in the reply, not only at the end
+const stripOpts = (s: string) => s.replace(/\[\[opts:[^\]]*\]\]\s*/g, "");
+const parseOpts = (s: string): string[] => {
+  const matches = [...s.matchAll(/\[\[opts:([^\]]+)\]\]/g)];
+  const last = matches[matches.length - 1];
+  return last ? last[1].split("|").map((x) => x.trim()).filter(Boolean).slice(0, 4) : [];
+};
 const DEPTH_CHIPS = ["shorter", "go deeper", "show me an example", "skip ahead — I know this"];
 const STARTERS = [
   "Teach me this from zero.",
@@ -54,6 +60,7 @@ function TeacherAvatar({ state }: { state: "idle" | "thinking" | "speaking" }) {
 export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?: string }) {
   const store = useStore();
   const [avail, setAvail] = useState<Availability>("checking");
+  const [backend, setBackend] = useState<"cli" | "api" | null>(null);
   const [mode, setMode] = useState<TutorMode>("teach");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [chips, setChips] = useState<string[]>([]);
@@ -71,9 +78,10 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
     let alive = true;
     fetch("/api/tutor")
       .then((r) => r.json())
-      .then((j: { available?: boolean; reason?: string }) => {
+      .then((j: { available?: boolean; reason?: string; backend?: "cli" | "api" }) => {
         if (!alive) return;
         setAvail(j.available ? "ready" : j.reason === "needs-accounts" ? "needs-accounts" : "no-key");
+        setBackend(j.backend ?? null);
       })
       .catch(() => { if (alive) setAvail("no-key"); });
     return () => { alive = false; };
@@ -119,11 +127,10 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
         const { done, value } = await reader.read();
         if (done) break;
         full += decoder.decode(value, { stream: true });
-        const shown = full.replace(OPTS_RE, "");
-        setMessages([...history, { role: "assistant", content: shown }]);
+        setMessages([...history, { role: "assistant", content: stripOpts(full) }]);
       }
-      const m = full.match(OPTS_RE);
-      if (m) setChips(m[1].split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4));
+      const opts = parseOpts(full);
+      if (opts.length) setChips(opts);
 
       if (summaryRequest) {
         const parsed = parseTutorSummary(full);
@@ -172,7 +179,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
       <div className="rounded-md border border-line bg-panel2/50 p-3">
         <div className="mono-label mb-1.5">live tutor — not enabled on this deployment</div>
         <div className="mb-2 text-[12px] text-faint">
-          {avail === "no-key" && "Set ANTHROPIC_API_KEY (and redeploy) to wake the resident tutor. Until then, the copy-paste bridge below works with any AI."}
+          {avail === "no-key" && "Two ways to wake the tutor: run this app on your PC with Claude Code installed (npm run dev — it rides your Claude subscription, no API key), or set ANTHROPIC_API_KEY on the deployment for tutoring from anywhere. Until then, the copy-paste bridge below works with any AI."}
           {avail === "needs-accounts" && "The tutor needs accounts (attach Redis) so it isn't an open endpoint. Until then, the copy-paste bridge below works with any AI."}
           {avail === "unauthed" && "Sign in to talk to the tutor. Until then, the copy-paste bridge below works with any AI."}
         </div>
@@ -191,7 +198,9 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
         <div className="min-w-0 flex-1">
           <div className="mono-label">resident tutor · live</div>
           <div className="truncate text-[11.5px] text-faint">
-            {streaming ? (speaking ? "explaining…" : "thinking…") : "grounded in this node's curated materials — ask anything"}
+            {streaming
+              ? (speaking ? "explaining…" : "thinking…")
+              : `grounded in this node's curated materials — ask anything${backend === "cli" ? " · via your Claude Code subscription" : ""}`}
           </div>
         </div>
         <select
