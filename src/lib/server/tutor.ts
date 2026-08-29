@@ -70,7 +70,7 @@ export function buildSystemPrompt(
   learnerContext: string,
   grounding: string,
 ): string {
-  return `You are the resident tutor of EMBODIED // OS, a mastery-gated learning system for one learner working toward independent embodied-intelligence research capability. You teach inside the app, at the exact node the learner is on.
+  return `You are the resident tutor of HALO (PROJECT : VANTA HALO), a mastery-gated learning system carrying one learner toward independent embodied-intelligence research capability. You teach inside the app, at the exact node the learner is on.
 
 ${grounding}
 
@@ -102,6 +102,16 @@ END OF SESSION: when the learner says the session is over / asks for the summary
 ${SUMMARY_SCHEMA.replace('"<id>"', `"${nodeId}"`).replace("<mode>", mode)}`;
 }
 
+export type StreamResult =
+  | { ok: true; stream: ReadableStream<Uint8Array> }
+  | { ok: false; status: number; error: string };
+
+const clip = (messages: TutorMessage[]) =>
+  messages.slice(-MAX_HISTORY).map((m) => ({
+    role: m.role,
+    content: m.content.length > MAX_MSG_CHARS ? `${m.content.slice(0, MAX_MSG_CHARS)}\n…[truncated]` : m.content,
+  }));
+
 /**
  * Call Anthropic with streaming and return a stream of plain text chunks
  * (SSE parsed server-side so the client just reads text).
@@ -109,17 +119,15 @@ ${SUMMARY_SCHEMA.replace('"<id>"', `"${nodeId}"`).replace("<mode>", mode)}`;
 export async function streamClaude(
   system: string,
   messages: TutorMessage[],
-): Promise<{ ok: true; stream: ReadableStream<Uint8Array> } | { ok: false; status: number; error: string }> {
-  const clipped = messages.slice(-MAX_HISTORY).map((m) => ({
-    role: m.role,
-    content: m.content.length > MAX_MSG_CHARS ? `${m.content.slice(0, MAX_MSG_CHARS)}\n…[truncated]` : m.content,
-  }));
+  apiKey: string,
+): Promise<StreamResult> {
+  const clipped = clip(messages);
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
@@ -172,6 +180,80 @@ export async function streamClaude(
                 controller.enqueue(encoder.encode(`\n\n⚠ tutor stream error: ${evt.error?.message ?? "unknown"}`));
               }
             } catch { /* ignore unparseable frames (ping etc.) */ }
+          }
+        }
+      } catch {
+        controller.enqueue(encoder.encode("\n\n⚠ connection to the tutor dropped — send that again."));
+      } finally {
+        reader.releaseLock();
+        controller.close();
+      }
+    },
+    cancel() {
+      void upstream.cancel().catch(() => {});
+    },
+  });
+
+  return { ok: true, stream };
+}
+
+/** Same contract as streamClaude, but through the learner's own OpenAI key. */
+export const TUTOR_OPENAI_MODEL = () => process.env.TUTOR_OPENAI_MODEL ?? "gpt-5";
+
+export async function streamOpenAI(
+  system: string,
+  messages: TutorMessage[],
+  apiKey: string,
+): Promise<StreamResult> {
+  const clipped = clip(messages);
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: TUTOR_OPENAI_MODEL(),
+      max_completion_tokens: MAX_REPLY_TOKENS,
+      messages: [{ role: "system", content: system }, ...clipped],
+      stream: true,
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    let msg = `upstream ${res.status}`;
+    try {
+      const j = JSON.parse(text) as { error?: { message?: string } };
+      if (j.error?.message) msg = j.error.message;
+    } catch { /* keep the status text */ }
+    return { ok: false, status: res.status === 429 ? 429 : 502, error: msg };
+  }
+
+  const upstream = res.body;
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = upstream.getReader();
+      let buf = "";
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const line of lines) {
+            const data = line.startsWith("data:") ? line.slice(5).trim() : null;
+            if (!data || data === "[DONE]") continue;
+            try {
+              const evt = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] };
+              const chunk = evt.choices?.[0]?.delta?.content;
+              if (chunk) controller.enqueue(encoder.encode(chunk));
+            } catch { /* ignore keep-alives */ }
           }
         }
       } catch {

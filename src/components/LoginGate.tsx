@@ -45,10 +45,10 @@ export function LoginGate() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="font-mono text-lg font-bold tracking-[0.3em] text-ink">
-            EMBODIED<span className="text-acc">{" // "}</span>OS
+            HALO<span className="text-acc">{" // "}</span>VANTA
           </div>
           <div className="mt-2 text-xs text-faint">
-            210 days · zero → embodied-intelligence researcher
+            PROJECT : VANTA HALO — the ascent to embodied-intelligence research
           </div>
         </div>
 

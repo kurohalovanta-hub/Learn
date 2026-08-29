@@ -8,9 +8,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jbmono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
 
 export const metadata: Metadata = {
-  title: { default: "EMBODIED // OS", template: "%s · EMBODIED // OS" },
+  title: { default: "HALO", template: "%s · HALO" },
   description:
-    "210 days from zero to embodied-intelligence researcher — a mastery-gated learning operating system.",
+    "PROJECT : VANTA HALO — a mastery-gated ascent from zero to embodied-intelligence researcher.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

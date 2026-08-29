@@ -1,4 +1,4 @@
-// Canonical schemas for EMBODIED // OS.
+// Canonical schemas for HALO (PROJECT : VANTA HALO).
 // Content types mirror HANDOVER.md §27 (resources), §28 (curriculum items), §29 (papers).
 
 export const TIERS = ["none", "bronze", "silver", "gold", "platinum", "research"] as const;

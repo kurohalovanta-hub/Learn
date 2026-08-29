@@ -48,7 +48,7 @@ export function buildLearnerStateMarkdown(data: ProgressData): string {
   const papersActive = Object.entries(data.papers).filter(([, p]) => !["queue", "triaged"].includes(p.status));
   const line = ([id]: [string, unknown]) => `- ${NODE_MAP.get(id)?.title ?? id} (${id})`;
 
-  return `# CURRENT STATE — EMBODIED // OS learner
+  return `# CURRENT STATE — HALO learner
 Generated ${new Date().toISOString().slice(0, 10)} · rank: ${rank.title} · readiness ${readinessScore(data.nodes)}/100 (verified-weighted)
 
 GOAL: independent embodied-intelligence / robot-learning research capability in ~210 days.

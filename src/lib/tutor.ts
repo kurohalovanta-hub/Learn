@@ -86,7 +86,7 @@ export function buildTutorPacket(
   const node = NODE_MAP.get(nodeId);
   if (!node) return "";
 
-  return `TUTOR SESSION PACKET — EMBODIED // OS (paste this whole block, then start)
+  return `TUTOR SESSION PACKET — HALO (paste this whole block, then start)
 
 ${buildLearnerContext(nodeId, data, bottleneck)}
 

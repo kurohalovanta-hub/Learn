@@ -1,15 +1,25 @@
 "use client";
 
-// Tutor connection status — shown on first run and in Settings, so "is my
-// tutor alive?" is never a mystery. A website cannot OAuth into a Claude
-// subscription; this card says exactly what IS connected and how to connect.
+// Tutor connection status. The happy path is per-account: connect YOUR Claude
+// or ChatGPT once, tutor works everywhere. Local Claude Code and a deployment
+// key are quieter fallbacks — never homework for the user.
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AIConnect } from "@/components/tutor/AIConnect";
 
+type Backend = "your-claude" | "your-chatgpt" | "cli" | "deployment";
 type Status =
   | { state: "checking" }
-  | { state: "connected"; backend: "cli" | "api" }
-  | { state: "off"; reason: "no-key" | "needs-accounts" };
+  | { state: "connected"; backend: Backend }
+  | { state: "off"; reason: string };
+
+const BACKEND_LABEL: Record<Backend, string> = {
+  "your-claude": "your Claude connection",
+  "your-chatgpt": "your ChatGPT connection",
+  "cli": "your Claude Code subscription (this machine)",
+  "deployment": "this deployment's shared key",
+};
 
 export function TutorStatusCard() {
   const [status, setStatus] = useState<Status>({ state: "checking" });
@@ -18,11 +28,11 @@ export function TutorStatusCard() {
   const check = useCallback(() => {
     fetch("/api/tutor")
       .then((r) => r.json())
-      .then((j: { available?: boolean; reason?: string; backend?: "cli" | "api" }) => {
+      .then((j: { available?: boolean; reason?: string; backend?: Backend }) => {
         setStatus(
-          j.available
-            ? { state: "connected", backend: j.backend === "cli" ? "cli" : "api" }
-            : { state: "off", reason: j.reason === "needs-accounts" ? "needs-accounts" : "no-key" },
+          j.available && j.backend
+            ? { state: "connected", backend: j.backend }
+            : { state: "off", reason: j.reason ?? "no-key" },
         );
       })
       .catch(() => setStatus({ state: "off", reason: "no-key" }));
@@ -52,26 +62,20 @@ export function TutorStatusCard() {
       </div>
       <div className="mt-1.5 text-[12.5px] leading-relaxed text-dim">
         {status.state === "checking" && "checking…"}
-        {status.state === "connected" && status.backend === "cli" && (
-          <><b className="text-acc-robot">Connected — your Claude Code subscription.</b> Ask anything from Today or any node; conversations are saved to your account.</>
+        {status.state === "connected" && (
+          <><b className="text-acc-robot">Live — running on {BACKEND_LABEL[status.backend]}.</b> Ask anything from Today or any node; every conversation is saved to your account.</>
         )}
-        {status.state === "connected" && status.backend === "api" && (
-          <><b className="text-acc-robot">Connected — API key on this deployment.</b> Ask anything from Today or any node; conversations are saved to your account.</>
+        {status.state === "off" && status.reason === "sign-in" && (
+          <><b className="text-warn">Sign in to wake your tutor.</b> It runs on the AI you connect to your account.</>
         )}
-        {status.state === "off" && (
-          <>
-            <b className="text-warn">Not connected on this deployment.</b> Two ways to wake it:
-            <span className="mt-1 block">
-              <b className="text-ink">On your PC</b> — install Claude Code, sign in once (<code className="text-[11.5px]">claude</code> in a terminal),
-              then run this app locally (<code className="text-[11.5px]">npm run dev</code>). The tutor uses your Claude subscription — no API key.
-            </span>
-            <span className="mt-1 block">
-              <b className="text-ink">Anywhere</b> — {status.reason === "needs-accounts"
-                ? "accounts are already on; add ANTHROPIC_API_KEY in Vercel and redeploy."
-                : "add ANTHROPIC_API_KEY in Vercel (and Redis for accounts) and redeploy."}
-            </span>
-            <span className="mt-1 block text-faint">Until then the copy-paste bridge on each node works with any AI chat.</span>
-          </>
+        {status.state === "off" && status.reason === "connect" && (
+          <div className="space-y-2">
+            <div><b className="text-warn">One step left:</b> connect your Claude or ChatGPT and the tutor comes alive — here, on your phone, everywhere.</div>
+            <AIConnect compact />
+          </div>
+        )}
+        {status.state === "off" && (status.reason === "no-key" || status.reason === "needs-accounts") && (
+          <><b className="text-warn">Tutor offline on this deployment.</b> Accounts have to be enabled first — then every user connects their own AI in <Link href="/settings" className="text-acc hover:underline">Settings</Link>.</>
         )}
       </div>
     </div>

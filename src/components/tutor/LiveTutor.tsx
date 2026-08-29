@@ -12,10 +12,12 @@ import {
   TUTOR_MODE_LABELS, type TutorMode,
 } from "@/lib/tutor";
 import { runPython, type RunResult } from "@/lib/pyodide-runner";
+import { buildProgressDigest } from "@/lib/memory-digest";
 import { Markdown } from "@/components/lesson/Markdown";
 import { TutorBridge } from "@/components/TutorBridge";
+import { AIConnect } from "@/components/tutor/AIConnect";
 
-type Availability = "checking" | "ready" | "no-key" | "needs-accounts" | "unauthed";
+type Availability = "checking" | "ready" | "no-key" | "connect" | "unauthed";
 
 interface Msg {
   role: "user" | "assistant";
@@ -60,7 +62,7 @@ function TeacherAvatar({ state }: { state: "idle" | "thinking" | "speaking" }) {
 export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?: string }) {
   const store = useStore();
   const [avail, setAvail] = useState<Availability>("checking");
-  const [backend, setBackend] = useState<"cli" | "api" | null>(null);
+  const [backend, setBackend] = useState<"your-claude" | "your-chatgpt" | "cli" | "deployment" | null>(null);
   const [mode, setMode] = useState<TutorMode>("teach");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [chips, setChips] = useState<string[]>([]);
@@ -78,9 +80,9 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
     let alive = true;
     fetch("/api/tutor")
       .then((r) => r.json())
-      .then((j: { available?: boolean; reason?: string; backend?: "cli" | "api" }) => {
+      .then((j: { available?: boolean; reason?: string; backend?: "your-claude" | "your-chatgpt" | "cli" | "deployment" }) => {
         if (!alive) return;
-        setAvail(j.available ? "ready" : j.reason === "needs-accounts" ? "needs-accounts" : "no-key");
+        setAvail(j.available ? "ready" : j.reason === "sign-in" ? "unauthed" : j.reason === "connect" ? "connect" : "no-key");
         setBackend(j.backend ?? null);
       })
       .catch(() => { if (alive) setAvail("no-key"); });
@@ -158,6 +160,13 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           setMessages([...history, done]);
           setChips([]);
           store.saveTutorChat(nodeId, [...history, done]);
+          // fire-and-forget: push the digest to the linked memory repo
+          const st = useStore.getState();
+          void fetch("/api/memory", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ digest: buildProgressDigest({ nodes: st.nodes, events: st.events, logs: st.logs, tutorChats: st.tutorChats }) }),
+          }).catch(() => {});
         } else {
           setNotice(`Couldn't parse the session summary (${parsed.error}) — evidence not logged.`);
         }
@@ -193,12 +202,18 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
   if (avail !== "ready") {
     return (
       <div className="rounded-md border border-line bg-panel2/50 p-3">
-        <div className="mono-label mb-1.5">live tutor — not enabled on this deployment</div>
-        <div className="mb-2 text-[12px] text-faint">
-          {avail === "no-key" && "Two ways to wake the tutor: run this app on your PC with Claude Code installed (npm run dev — it rides your Claude subscription, no API key), or set ANTHROPIC_API_KEY on the deployment for tutoring from anywhere. Until then, the copy-paste bridge below works with any AI."}
-          {avail === "needs-accounts" && "The tutor needs accounts (attach Redis) so it isn't an open endpoint. Until then, the copy-paste bridge below works with any AI."}
-          {avail === "unauthed" && "Sign in to talk to the tutor. Until then, the copy-paste bridge below works with any AI."}
-        </div>
+        <div className="mono-label mb-1.5">your tutor — one step from alive</div>
+        {avail === "connect" ? (
+          <div className="mb-2 space-y-2 text-[12px] text-faint">
+            <div>Connect your Claude or ChatGPT and the tutor wakes up right here — it teaches from this node&apos;s curated materials and remembers every conversation in your account.</div>
+            <AIConnect compact />
+          </div>
+        ) : (
+          <div className="mb-2 text-[12px] text-faint">
+            {avail === "unauthed" && "Sign in, then connect your Claude or ChatGPT in Settings — the tutor runs on your own AI, from any device."}
+            {avail === "no-key" && "Accounts aren't enabled on this deployment yet, so the tutor can't hold your connection. The copy-paste bridge below works with any AI meanwhile."}
+          </div>
+        )}
         <TutorBridge nodeId={nodeId} bottleneck={bottleneck} compact />
       </div>
     );
@@ -216,7 +231,10 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           <div className="truncate text-[11.5px] text-faint">
             {streaming
               ? (speaking ? "explaining…" : "thinking…")
-              : `grounded in this node's curated materials — ask anything${backend === "cli" ? " · via your Claude Code subscription" : ""}`}
+              : `grounded in this node's curated materials — ask anything${
+                  backend === "your-claude" ? " · your Claude" :
+                  backend === "your-chatgpt" ? " · your ChatGPT" :
+                  backend === "cli" ? " · your Claude Code subscription" : ""}`}
           </div>
         </div>
         <select

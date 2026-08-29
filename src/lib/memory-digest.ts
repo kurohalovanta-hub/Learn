@@ -6,7 +6,9 @@
 import { NODE_MAP, NODES } from "@/content/nodes";
 import type { ProgressData } from "@/lib/types";
 
-export function buildProgressDigest(data: Pick<ProgressData, "nodes" | "events" | "logs">): string {
+export function buildProgressDigest(
+  data: Pick<ProgressData, "nodes" | "events" | "logs"> & Partial<Pick<ProgressData, "tutorChats">>,
+): string {
   const now = new Date().toISOString();
   const entries = Object.entries(data.nodes);
   const verified = entries.filter(([, p]) => p.verified);
@@ -42,8 +44,33 @@ export function buildProgressDigest(data: Pick<ProgressData, "nodes" | "events" 
 
   const minutes = data.logs.reduce((s, l) => s + l.minutes, 0);
 
-  return `# EMBODIED // OS — progress memory
+  // recent tutor conversations — so ANY assistant picking this file up knows
+  // what has already been explained, asked, and misunderstood
+  const chats = Object.values(data.tutorChats ?? {})
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 6)
+    .map((c) => {
+      const turns = c.messages.slice(-10)
+        .map((m) => `> **${m.role === "user" ? "learner" : "tutor"}:** ${m.content.replace(/\s+/g, " ").slice(0, 300)}`)
+        .join("\n");
+      return `### ${title(c.nodeId)} (${new Date(c.updatedAt).toISOString().slice(0, 10)})\n${turns}`;
+    })
+    .join("\n\n");
+
+  return `# HALO — progress memory
 _Synced ${now} · derived from the evidence log · private_
+
+## FOR ANY AI ASSISTANT — read this first
+You are picking up an ongoing tutoring relationship. The learner is climbing
+HALO (PROJECT : VANTA HALO): a mastery-gated path from zero to independent
+embodied-intelligence / robot-learning research capability (149 skill nodes,
+evidence-derived progress — nothing below is self-reported).
+House rules: never solve their mastery assessments for them; default to
+questions and minimal hints; flag any full solution you show; be brief —
+answer first, one concept per turn; adapt to the verified state below, not to
+what they claim. The "Tutor conversations" section shows what has already been
+taught and where they struggled — do not re-teach what is verified, do re-probe
+active weaknesses.
 
 ## Capability
 - **Verified nodes: ${verified.length} / ${NODES.length}** · claimed-unverified: ${claimed.length} · in progress: ${learning.length}
@@ -64,5 +91,8 @@ ${recent}
 
 ## Active weaknesses (recent fails / tutor-flagged)
 ${weaknesses}
+
+## Tutor conversations (most recent, trimmed)
+${chats || "_none yet_"}
 `;
 }

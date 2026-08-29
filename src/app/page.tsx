@@ -12,6 +12,7 @@ import { LEVELS } from "@/content/levels";
 import { PAPERS } from "@/content/papers";
 import { Bar, EmptyState, NodePill, Panel, SectionTitle, Stat } from "@/components/ui";
 import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
+import { MemorySync } from "@/components/MemorySync";
 import { NODES } from "@/content/nodes";
 
 export default function Dashboard() {
@@ -62,7 +63,7 @@ export default function Dashboard() {
       {isFresh && (
         <Panel accent="#e8b34d">
           <SectionTitle>new here — 3 things and you&apos;re oriented</SectionTitle>
-          <div className="mb-3"><TutorStatusCard /></div>
+          <div className="mb-3 space-y-2"><TutorStatusCard /><MemorySync compact /></div>
           <div className="grid gap-2 text-sm text-dim md:grid-cols-3">
             <div>
               <span className="font-mono text-xs text-acc">01</span>{" "}

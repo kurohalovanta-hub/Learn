@@ -140,7 +140,7 @@ function BootScreen() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <div className="font-mono text-sm font-bold tracking-[0.3em] text-dim">
-          EMBODIED<span className="text-acc">{" // "}</span>OS
+          HALO<span className="text-acc">{" // "}</span>VANTA
         </div>
         <div className="mt-3 flex justify-center gap-1.5">
           {[0, 1, 2].map((i) => (
@@ -223,9 +223,9 @@ function Sidebar({ pathname, onSearch }: { pathname: string; onSearch: () => voi
       <div className="border-b border-line px-5 py-5">
         <Link href="/" className="block">
           <div className="font-mono text-[13px] font-bold tracking-[0.25em] text-ink">
-            EMBODIED<span className="text-acc">{" // "}</span>OS
+            HALO<span className="text-acc">{" // "}</span>VANTA
           </div>
-          <div className="mt-1 text-[11px] text-faint">zero → researcher · 210 days</div>
+          <div className="mt-1 text-[11px] text-faint">PROJECT : VANTA HALO</div>
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <DayChip />
@@ -260,7 +260,7 @@ function MobileTopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () =
         ☰
       </button>
       <Link href="/" className="min-w-0 flex-1 text-center font-mono text-[12px] font-bold tracking-[0.22em]">
-        EMBODIED<span className="text-acc">{" // "}</span>OS
+        HALO<span className="text-acc">{" // "}</span>VANTA
       </Link>
       <DayChip />
       <button aria-label="Search" onClick={onSearch} className="btn-ghost btn !min-h-[40px] !px-3 font-mono">
@@ -312,7 +312,7 @@ function MobileDrawer({ pathname, onClose }: { pathname: string; onClose: () => 
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div>
             <div className="font-mono text-[12px] font-bold tracking-[0.22em]">
-              EMBODIED<span className="text-acc">{" // "}</span>OS
+              HALO<span className="text-acc">{" // "}</span>VANTA
             </div>
             <div className="mt-0.5 text-[11px] text-faint">
               {user ? `@${user.username} · ` : ""}rank {rank.index} · {rank.title}

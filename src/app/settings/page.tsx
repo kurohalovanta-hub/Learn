@@ -5,8 +5,9 @@ import { useRef, useState } from "react";
 import { useStore, migrate } from "@/lib/store";
 import { useAuth } from "@/lib/auth-client";
 import { pullAndMerge, pushNow, resetSyncLifecycle } from "@/lib/sync";
-import { buildProgressDigest } from "@/lib/memory-digest";
 import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
+import { MemorySync } from "@/components/MemorySync";
+import { AIConnect } from "@/components/tutor/AIConnect";
 import { Panel, SectionTitle } from "@/components/ui";
 import type { ProgressData } from "@/lib/types";
 
@@ -106,28 +107,7 @@ export default function SettingsPage() {
               {auth.user.role === "admin" && (
                 <Link href="/admin" className="btn">⛨ Manage users</Link>
               )}
-              {auth.user.role === "admin" && (
-                <button
-                  className="btn"
-                  title="Commits a progress digest to the configured PRIVATE GitHub repo"
-                  onClick={async () => {
-                    try {
-                      const digest = buildProgressDigest({ nodes: store.nodes, events: store.events, logs: store.logs });
-                      const res = await fetch("/api/memory", {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ digest }),
-                      });
-                      const j = (await res.json()) as { ok?: boolean; path?: string; error?: string };
-                      setMsg(j.ok ? `✓ Memory synced to GitHub (${j.path})` : `✗ ${j.error ?? `sync failed (${res.status})`}`);
-                    } catch (e) {
-                      setMsg(`✗ ${(e as Error).message}`);
-                    }
-                  }}
-                >
-                  ⇪ Sync memory → GitHub
-                </button>
-              )}
+
               <button
                 className="btn btn-danger"
                 onClick={async () => {
@@ -159,6 +139,18 @@ export default function SettingsPage() {
       <Panel accent="#52d68a">
         <SectionTitle>tutor</SectionTitle>
         <TutorStatusCard />
+      </Panel>
+
+      {/* AI connections */}
+      <Panel accent="#4dd6e8">
+        <SectionTitle>connections — your AI</SectionTitle>
+        <AIConnect />
+      </Panel>
+
+      {/* AI memory */}
+      <Panel accent="#a78bfa">
+        <SectionTitle>memory — your AI&apos;s long-term recall</SectionTitle>
+        <MemorySync />
       </Panel>
 
       {/* program */}
@@ -249,7 +241,7 @@ export default function SettingsPage() {
       </Panel>
 
       <div className="text-center text-[11px] text-faint">
-        EMBODIED // OS · curriculum verified 2026-08-21 · content is code — see docs/ in the repo
+        HALO · PROJECT : VANTA HALO · curriculum verified 2026-08-21 · content is code — see docs/ in the repo
       </div>
     </div>
   );

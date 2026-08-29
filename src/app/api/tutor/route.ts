@@ -1,15 +1,16 @@
-// Live tutor route (ADR-005). GET = availability probe; POST = streamed reply.
-// Two backends, local CLI preferred:
-//  - "cli": the learner's own Claude Code CLI (subscription-powered, local runs
-//    only — dev or TUTOR_USE_CLAUDE_CLI=1; never exists on Vercel)
-//  - "api": ANTHROPIC_API_KEY; in production it requires an approved session
-//    (Redis) so a keyed public deployment never exposes someone's credit.
+// Live tutor route (ADR-005, revised for per-user connections).
+// Backend resolution order per request:
+//   1. the signed-in user's OWN linked key (Claude or ChatGPT, their choice)
+//   2. the local Claude Code CLI (dev machines — subscription, no key)
+//   3. a deployment-wide ANTHROPIC_API_KEY (optional; session + daily budget)
+// GET reports which backend would serve, so the UI can say something honest.
 
 import { NODE_MAP } from "@/content/nodes";
 import { getRedis, rateLimit, requireSession } from "@/lib/server/auth";
+import { loadAIKeys, pickProvider } from "@/lib/server/ai-keys";
 import {
-  buildGrounding, buildSystemPrompt, streamClaude,
-  TUTOR_DAILY_LIMIT, tutorKeySet, type TutorMessage,
+  buildGrounding, buildSystemPrompt, streamClaude, streamOpenAI,
+  TUTOR_DAILY_LIMIT, tutorKeySet, type StreamResult, type TutorMessage,
 } from "@/lib/server/tutor";
 import { claudeCliAvailable, streamClaudeCli } from "@/lib/server/tutor-cli";
 import type { TutorMode } from "@/lib/tutor";
@@ -20,35 +21,61 @@ const DEV = process.env.NODE_ENV === "development";
 
 const MODES = new Set<TutorMode>(["teach", "diagnose", "socratic", "practice", "debug", "examine", "defense", "critic"]);
 
-export async function GET() {
-  if (claudeCliAvailable()) {
-    return Response.json({ available: true, backend: "cli" });
+type Resolved =
+  | { kind: "user"; provider: "anthropic" | "openai"; key: string; username: string }
+  | { kind: "cli" }
+  | { kind: "env"; username: string | null };
+
+/** Figure out which backend serves this request. Returns a reason string when none can. */
+async function resolveBackend(req: Request): Promise<Resolved | { kind: "none"; reason: string }> {
+  const redis = getRedis();
+  if (redis) {
+    const ctx = await requireSession(req);
+    if (!(ctx instanceof Response)) {
+      const pick = pickProvider(await loadAIKeys(redis, ctx.user.username));
+      if (pick) return { kind: "user", provider: pick.provider, key: pick.key, username: ctx.user.username };
+      if (claudeCliAvailable()) return { kind: "cli" };
+      if (tutorKeySet()) return { kind: "env", username: ctx.user.username };
+      return { kind: "none", reason: "connect" };
+    }
+    if (claudeCliAvailable()) return { kind: "cli" };
+    return { kind: "none", reason: "sign-in" };
   }
-  if (!tutorKeySet()) {
-    return Response.json({ available: false, reason: "no-key" });
+  if (claudeCliAvailable()) return { kind: "cli" };
+  if (tutorKeySet()) {
+    if (DEV) return { kind: "env", username: null };
+    return { kind: "none", reason: "needs-accounts" };
   }
-  if (!getRedis() && !DEV) {
-    return Response.json({ available: false, reason: "needs-accounts" });
-  }
-  return Response.json({ available: true, backend: "api" });
+  return { kind: "none", reason: "no-key" };
+}
+
+export async function GET(req: Request) {
+  const r = await resolveBackend(req);
+  if (r.kind === "none") return Response.json({ available: false, reason: r.reason });
+  const backend =
+    r.kind === "user" ? (r.provider === "anthropic" ? "your-claude" : "your-chatgpt")
+    : r.kind === "cli" ? "cli"
+    : "deployment";
+  return Response.json({ available: true, backend });
 }
 
 export async function POST(req: Request) {
-  const useCli = claudeCliAvailable();
+  const r = await resolveBackend(req);
+  if (r.kind === "none") {
+    const friendly: Record<string, string> = {
+      "connect": "No AI connected yet — link your Claude or ChatGPT in Settings → connections.",
+      "sign-in": "Sign in first — the tutor runs on your own AI connection.",
+      "needs-accounts": "This deployment needs accounts (Redis) before the tutor can serve.",
+      "no-key": "No AI available on this deployment.",
+    };
+    return Response.json({ error: friendly[r.reason] ?? r.reason }, { status: r.reason === "sign-in" ? 401 : 501 });
+  }
 
-  if (!useCli) {
-    if (!tutorKeySet()) {
-      return Response.json({ error: "Tutor not configured — run the app locally with Claude Code installed, or set ANTHROPIC_API_KEY." }, { status: 501 });
-    }
+  // the deployment-wide key is a shared resource — budget it per user
+  if (r.kind === "env" && r.username) {
     const redis = getRedis();
-    if (redis) {
-      const ctx = await requireSession(req);
-      if (ctx instanceof Response) return ctx;
-      if (!(await rateLimit(redis, `tutor:${ctx.user.username}`, TUTOR_DAILY_LIMIT(), 86_400))) {
-        return Response.json({ error: "Daily tutor budget reached — resets within 24h." }, { status: 429 });
-      }
-    } else if (!DEV) {
-      return Response.json({ error: "Tutor requires accounts in production — attach Redis first." }, { status: 501 });
+    if (redis && !(await rateLimit(redis, `tutor:${r.username}`, TUTOR_DAILY_LIMIT(), 86_400))) {
+      return Response.json({ error: "Daily tutor budget reached — resets within 24h. Link your own AI in Settings to lift this." }, { status: 429 });
     }
   }
 
@@ -83,10 +110,17 @@ export async function POST(req: Request) {
     "x-accel-buffering": "no",
   };
 
-  if (useCli) {
+  if (r.kind === "cli") {
     return new Response(streamClaudeCli(system, messages), { headers });
   }
-  const result = await streamClaude(system, messages);
+
+  let result: StreamResult;
+  if (r.kind === "user" && r.provider === "openai") {
+    result = await streamOpenAI(system, messages, r.key);
+  } else {
+    const key = r.kind === "user" ? r.key : process.env.ANTHROPIC_API_KEY!;
+    result = await streamClaude(system, messages, key);
+  }
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
   return new Response(result.stream, { headers });
 }
