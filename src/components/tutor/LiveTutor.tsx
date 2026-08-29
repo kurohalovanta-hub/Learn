@@ -12,7 +12,7 @@ import {
   TUTOR_MODE_LABELS, type TutorMode,
 } from "@/lib/tutor";
 import { runPython, type RunResult } from "@/lib/pyodide-runner";
-import { buildProgressDigest } from "@/lib/memory-digest";
+import { buildLifeContext, buildProgressDigest } from "@/lib/memory-digest";
 import { Markdown } from "@/components/lesson/Markdown";
 import { TutorBridge } from "@/components/TutorBridge";
 import { AIConnect } from "@/components/tutor/AIConnect";
@@ -149,7 +149,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
         signal: controller.signal,
         body: JSON.stringify({
           nodeId, mode: modeOverride ?? mode, ...(model ? { model } : {}),
-          context: buildLearnerContext(nodeId, { nodes: store.nodes, events: store.events, logs: store.logs }, bottleneck),
+          context: `${buildLearnerContext(nodeId, { nodes: store.nodes, events: store.events, logs: store.logs, settings: store.settings }, bottleneck)}\n\nEVERYTHING ELSE THE LEARNER HAS WRITTEN (reviews, ideas, experiments, papers — use when relevant):\n${buildLifeContext({ weeklies: store.weeklies, ideas: store.ideas, experiments: store.experiments, papers: store.papers }) || "nothing yet"}`.slice(0, 8000),
           messages: history,
         }),
       });
@@ -188,7 +188,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           void fetch("/api/memory", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ digest: buildProgressDigest({ nodes: st.nodes, events: st.events, logs: st.logs, tutorChats: st.tutorChats }) }),
+            body: JSON.stringify({ digest: buildProgressDigest({ nodes: st.nodes, events: st.events, logs: st.logs, tutorChats: st.tutorChats, weeklies: st.weeklies, ideas: st.ideas, experiments: st.experiments, papers: st.papers }) }),
           }).catch(() => {});
         } else {
           setNotice(`Couldn't parse the session summary (${parsed.error}) — evidence not logged.`);

@@ -6,8 +6,43 @@
 import { NODE_MAP, NODES } from "@/content/nodes";
 import type { ProgressData } from "@/lib/types";
 
+/** Everything the learner has entered anywhere — compact, for AI context. */
+export function buildLifeContext(
+  data: Partial<Pick<ProgressData, "weeklies" | "ideas" | "experiments" | "papers">>,
+): string {
+  const parts: string[] = [];
+
+  const weeklies = Object.values(data.weeklies ?? {}).sort((a, b) => b.week.localeCompare(a.week)).slice(0, 2);
+  if (weeklies.length) {
+    parts.push("WEEKLY REVIEWS (learner's own words, newest first):\n" + weeklies.map((w) =>
+      `[${w.week}] ` + Object.entries(w.answers ?? {})
+        .filter(([, v]) => v?.trim())
+        .map(([k, v]) => `${k}: ${v.replace(/\s+/g, " ").slice(0, 220)}`)
+        .join(" · ")).join("\n"));
+  }
+
+  const ideas = (data.ideas ?? []).filter((i) => i.status !== "dropped").slice(-8);
+  if (ideas.length) {
+    parts.push("IDEA INBOX (open): " + ideas.map((i) => `${i.title}${i.note ? ` — ${i.note.slice(0, 100)}` : ""} [${i.status}]`).join("; "));
+  }
+
+  const exps = (data.experiments ?? []).slice(-5);
+  if (exps.length) {
+    parts.push("EXPERIMENTS:\n" + exps.map((e) =>
+      `- ${e.title}: hypothesis ${e.hypothesis?.slice(0, 140) || "—"}${e.baseline ? ` · baseline ${e.baseline.slice(0, 80)}` : ""}`).join("\n"));
+  }
+
+  const papers = Object.entries(data.papers ?? {}).filter(([, p]) => p.status !== "queue").slice(-8);
+  if (papers.length) {
+    parts.push("PAPERS: " + papers.map(([id, p]) => `${id} (${p.status})${p.notes ? ` — ${p.notes.replace(/\s+/g, " ").slice(0, 100)}` : ""}`).join("; "));
+  }
+
+  return parts.join("\n\n");
+}
+
 export function buildProgressDigest(
-  data: Pick<ProgressData, "nodes" | "events" | "logs"> & Partial<Pick<ProgressData, "tutorChats">>,
+  data: Pick<ProgressData, "nodes" | "events" | "logs"> &
+    Partial<Pick<ProgressData, "tutorChats" | "weeklies" | "ideas" | "experiments" | "papers">>,
 ): string {
   const now = new Date().toISOString();
   const entries = Object.entries(data.nodes);
@@ -94,5 +129,8 @@ ${weaknesses}
 
 ## Tutor conversations (most recent, trimmed)
 ${chats || "_none yet_"}
+
+## Everything else the learner wrote (reviews, ideas, experiments, papers)
+${buildLifeContext(data) || "_nothing yet_"}
 `;
 }

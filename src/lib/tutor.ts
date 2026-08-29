@@ -5,7 +5,8 @@
 
 import { NODE_MAP } from "@/content/nodes";
 import { resourceById } from "@/content/resources";
-import type { EvidenceRecord, ProgressData } from "@/lib/types";
+import { effortDay } from "@/lib/engine/pacing";
+import type { EvidenceRecord, ProgressData, Settings } from "@/lib/types";
 import type { NewEvidence } from "@/lib/store";
 
 export type TutorMode =
@@ -40,11 +41,13 @@ const MODE_CONTRACTS: Record<TutorMode, string> = {
  */
 export function buildLearnerContext(
   nodeId: string,
-  data: Pick<ProgressData, "nodes" | "events" | "logs">,
+  data: Pick<ProgressData, "nodes" | "events" | "logs"> & { settings?: Settings },
   bottleneck?: string,
 ): string {
   const node = NODE_MAP.get(nodeId);
   if (!node) return "";
+  const effort = data.settings ? effortDay(data.logs, data.settings) : null;
+  const nodeMinutes = data.events.filter((e) => e.nodeId === nodeId).reduce((s, e) => s + (e.minutes ?? 0), 0);
   const p = data.nodes[nodeId];
   const ev = data.events.filter((e) => e.nodeId === nodeId);
   const failed = ev.filter((e) => e.outcome === "fail").slice(-4);
@@ -59,7 +62,8 @@ export function buildLearnerContext(
     .join("; ") || "none";
   const primary = node.primary ? resourceById(node.primary.resourceId) : undefined;
 
-  return `OVERALL GOAL: independent embodied-intelligence/robot-learning research capability in ~210 days (currently working the skill graph toward that).
+  return `OVERALL GOAL: independent embodied-intelligence/robot-learning research capability (currently working the skill graph toward that).
+PACE — judge by EFFORT, never the calendar: the learner studies in irregular bursts (may vanish for days, then finish a lot in one sitting). ${effort != null ? `They have logged ~${effort} full study-days of actual work so far` : "Effort not tracked yet"}; ~${Math.round(nodeMinutes)} minutes on THIS node. Meet them where their effort and evidence put them, not where a schedule says they "should" be. Never scold absence; pace to the work in front of you.
 CURRENT NODE: ${node.title} (${node.id}, level ${node.level})
 NODE OBJECTIVES: ${node.objectives.join(" · ")}
 CURRENT BOTTLENECK: ${bottleneck ?? (failed.length ? `recent failures on: ${failed.map((f) => f.kind + (f.note ? ` (${f.note})` : "")).join("; ")}` : "first contact with this material")}

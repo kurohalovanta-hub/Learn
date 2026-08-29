@@ -15,6 +15,18 @@ export function currentPhase(day: number) {
   return PHASES.find((p) => day >= p.days[0] && day <= p.days[1]) ?? PHASES[PHASES.length - 1];
 }
 
+/**
+ * Effort-day: how many full study-days of ACTUAL work have gone in, from logged
+ * minutes / the daily target — independent of the calendar. This is the honest
+ * pace: leave for a week, then finish three effort-days in one sitting, and the
+ * number reflects the work, not the absence. Pacing/tutor should prefer this.
+ */
+export function effortDay(logs: { minutes: number }[], settings: Settings): number {
+  const target = Math.max(1, settings.dailyHoursTarget || 6);
+  const hours = logs.reduce((s, l) => s + (l.minutes || 0), 0) / 60;
+  return Math.round((hours / target) * 10) / 10;
+}
+
 /** Levels whose expected window contains this day (the pacing overlay). */
 export function expectedLevels(day: number): number[] {
   return LEVELS.filter((l) => day >= l.phase.startDay && day <= l.phase.endDay).map((l) => l.id);

@@ -64,7 +64,7 @@ export function MemorySync({ compact }: { compact?: boolean }) {
     setBusy(true);
     if (!silent) setMsg(null);
     try {
-      const digest = buildProgressDigest({ nodes: store.nodes, events: store.events, logs: store.logs, tutorChats: store.tutorChats });
+      const digest = buildProgressDigest({ nodes: store.nodes, events: store.events, logs: store.logs, tutorChats: store.tutorChats, weeklies: store.weeklies, ideas: store.ideas, experiments: store.experiments, papers: store.papers });
       const r = await fetch("/api/memory", {
         method: "POST",
         headers: { "content-type": "application/json" },

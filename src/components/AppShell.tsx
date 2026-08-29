@@ -52,6 +52,7 @@ const NAV_GROUPS: { section: string; items: NavItem[] }[] = [
   {
     section: "system",
     items: [
+      { href: "/agent", label: "Agent", icon: ">" },
       { href: "/review", label: "Review", icon: "↻" },
       { href: "/weekly", label: "Weekly", icon: "⑦" },
       { href: "/guide", label: "Field Manual", icon: "?" },

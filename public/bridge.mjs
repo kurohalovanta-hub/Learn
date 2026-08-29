@@ -76,6 +76,10 @@ const WEB_TOOLS = process.env.HALO_NO_WEB === "1" ? null : "WebSearch,WebFetch";
 
 function runClaude(job) {
   return new Promise((resolve) => {
+    if (job.raw && !FULL) {
+      void post(job.id, { error: "FULL CONTROL is not enabled on this bridge - re-run the installer and answer y." }).then(() => resolve());
+      return;
+    }
     const dir = mkdtempSync(join(tmpdir(), "halo-"));
     const sysFile = join(dir, "system.md");
     writeFileSync(sysFile, job.system, "utf8");
@@ -83,14 +87,21 @@ function runClaude(job) {
       writeFileSync(sysFile, job.system +
         "\n\nFULL CONTROL: you are running on the learner's own machine with all tools and no permission prompts. Only change files or run commands when the learner explicitly asks for that in this conversation; for ordinary tutoring, just answer.", "utf8");
     }
-    const args = [
-      "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose",
-      "--system-prompt-file", sysFile,
-      ...(FULL
-        ? ["--dangerously-skip-permissions", "--max-turns", "40"]
-        // web lookup lets the tutor verify links and pull fresh material; nothing else
-        : WEB_TOOLS ? ["--tools", WEB_TOOLS, "--max-turns", "6"] : ["--tools", "", "--max-turns", "1"]),
-    ];
+    const args = job.raw
+      // raw terminal: Claude Code with its own defaults, full permissions, in the workdir
+      ? [
+          "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose",
+          "--dangerously-skip-permissions", "--max-turns", "100",
+          "--append-system-prompt", "HALO remote terminal: the prompt may carry prior conversation; act on the owner's LAST message and report concisely.",
+        ]
+      : [
+          "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose",
+          "--system-prompt-file", sysFile,
+          ...(FULL
+            ? ["--dangerously-skip-permissions", "--max-turns", "40"]
+            // web lookup lets the tutor verify links and pull fresh material; nothing else
+            : WEB_TOOLS ? ["--tools", WEB_TOOLS, "--max-turns", "6"] : ["--tools", "", "--max-turns", "1"]),
+        ];
     const model = CLAUDE_MODELS[job.model];
     if (model) args.push("--model", model);
     const child = spawnCli("claude", args, FULL ? WORKDIR : undefined);
@@ -102,7 +113,7 @@ function runClaude(job) {
       if (pending.length) { void post(job.id, { chunks: pending }); pending = []; }
     };
     const flusher = setInterval(flush, 350);
-    const killer = setTimeout(() => child.kill("SIGKILL"), 150_000);
+    const killer = setTimeout(() => child.kill("SIGKILL"), job.raw ? 270_000 : 150_000);
 
     child.stdout.on("data", (data) => {
       buf += data.toString("utf8");

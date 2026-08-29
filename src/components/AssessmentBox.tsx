@@ -4,6 +4,7 @@ import { useState } from "react";
 import { NODE_MAP } from "@/content/nodes";
 import { assessWithMoment, type AssessmentResult } from "@/components/MasteryMoment";
 import { independenceFromChoice } from "@/lib/engine/competency";
+import { openTutorTask } from "@/lib/tutor-task";
 
 /**
  * The prove-it flow (HANDOVERFINAL §26): typed closed-book attempt → commit →
@@ -79,7 +80,16 @@ export function AssessmentBox({ id, diagnostic }: { id: string; diagnostic?: boo
           <div className="rounded-md border border-line bg-panel2/60 px-3 py-2 font-mono text-[12px] text-dim">
             {attempt.length > 400 ? attempt.slice(0, 400) + "…" : attempt}
           </div>
-          <div className="text-xs text-dim">Now judge it against the bar, honestly. How did you produce this?</div>
+          <button
+            className="rounded-md border border-acc-robot/40 bg-panel2 px-2.5 py-1.5 font-mono text-[11.5px] text-acc-robot transition-colors hover:bg-acc-robot/10"
+            onClick={() => openTutorTask({
+              mode: diagnostic ? "diagnose" : "examine",
+              text: `Grade my ${diagnostic ? "diagnostic" : "closed-book"} attempt for "${node.title}" against this bar:\n\n${diagnostic ? node.diagnostic : node.masteryTest}\n\nMY ATTEMPT:\n${attempt}\n\nBe a strict examiner: say clearly whether it holds, name every gap or error, and end with a one-line verdict (PASS / NOT YET). Do not soften it. I still record my own honest verdict below.`,
+            })}
+          >
+            ▸ have Claude grade this
+          </button>
+          <div className="text-xs text-dim">Then judge it against the bar yourself, honestly. How did you produce this?</div>
           <div className="flex flex-wrap gap-1.5">
             {([
               ["myself", "I did this myself"],
