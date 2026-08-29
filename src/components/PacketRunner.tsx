@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import type { LearningPacket } from "@/lib/packet-types";
 import { AssessmentBox } from "./AssessmentBox";
 import { LiveTutor } from "./tutor/LiveTutor";
+import { TutorTaskLink } from "./tutor/TutorTaskLink";
 import { SmartText } from "./SmartText";
 import { VideoCard } from "./VideoCard";
 
@@ -157,24 +158,38 @@ export function PacketRunner({ packet, curated }: { packet: LearningPacket; cura
       body: (
         <div className="space-y-3">
           {packet.derive && (
-            <ArtifactBlock
-              kind="derivation"
-              title="derive, on paper"
-              spec={packet.derive.spec}
-              checks={packet.derive.checks}
-              done={built("derivation")}
-              onDone={(artifact) => store.recordEvidence({ nodeId: id, kind: "derivation", outcome: "pass", note: "packet-build", artifact, minutes: packet.derive?.minutes ?? 30, independence: "independent" })}
-            />
+            <>
+              <ArtifactBlock
+                kind="derivation"
+                title="derive, on paper"
+                spec={packet.derive.spec}
+                checks={packet.derive.checks}
+                done={built("derivation")}
+                onDone={(artifact) => store.recordEvidence({ nodeId: id, kind: "derivation", outcome: "pass", note: "packet-build", artifact, minutes: packet.derive?.minutes ?? 30, independence: "independent" })}
+              />
+              <TutorTaskLink
+                mode="socratic"
+                label="▸ work this with the tutor — Socratic, step by step"
+                text={`Work this derivation task with me step by step. Socratic mode — never hand me the result:\n\n${packet.derive.spec}${packet.derive.checks?.length ? `\n\nChecks it must pass: ${packet.derive.checks.join("; ")}` : ""}`}
+              />
+            </>
           )}
           {packet.implement && (
-            <ArtifactBlock
-              kind="implementation"
-              title="implement, in your editor"
-              spec={packet.implement.spec}
-              checks={packet.implement.checks}
-              done={built("implementation")}
-              onDone={(artifact) => store.recordEvidence({ nodeId: id, kind: "implementation", outcome: "pass", note: "packet-build", artifact, minutes: packet.implement?.minutes ?? 45, independence: "independent" })}
-            />
+            <>
+              <ArtifactBlock
+                kind="implementation"
+                title="implement, in your editor"
+                spec={packet.implement.spec}
+                checks={packet.implement.checks}
+                done={built("implementation")}
+                onDone={(artifact) => store.recordEvidence({ nodeId: id, kind: "implementation", outcome: "pass", note: "packet-build", artifact, minutes: packet.implement?.minutes ?? 45, independence: "independent" })}
+              />
+              <TutorTaskLink
+                mode="debug"
+                label="▸ build this with the tutor — hints and review, not solutions"
+                text={`I'm working on this implementation task. Guide me with hints and review my attempts — don't write it for me:\n\n${packet.implement.spec}${packet.implement.checks?.length ? `\n\nChecks it must pass: ${packet.implement.checks.join("; ")}` : ""}`}
+              />
+            </>
           )}
         </div>
       ),
@@ -191,6 +206,11 @@ export function PacketRunner({ packet, curated }: { packet: LearningPacket; cura
               <li key={i}>□ {c}</li>
             ))}
           </ul>
+          <TutorTaskLink
+            mode="examine"
+            label="▸ tutor as examiner — drill me on this bar first"
+            text={`Act as my closed-book examiner for this bar. Quiz me, push follow-ups, grade honestly, never reveal answers before I attempt:\n\n${packet.prove.task}\n\nCriteria: ${packet.prove.criteria.join("; ")}`}
+          />
           <AssessmentBox id={id} />
           {packet.transfer && proved && (
             <div className="mt-2 rounded-md border border-acc-math/30 bg-acc-math/[0.05] px-3 py-2.5">

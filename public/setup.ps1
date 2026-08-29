@@ -14,7 +14,7 @@
 # ============================================================================
 
 $ErrorActionPreference = "Continue"   # PS 5.1 turns npm/vercel stderr noise fatal under Stop
-$SetupVersion = "v3 (2026-08-29)"
+$SetupVersion = "v4 (2026-08-29)"
 $Root    = "C:\halo"
 $RepoUrl = "https://github.com/kurohalovanta-hub/Learn.git"
 $Branch  = "claude/embodied-intelligence-research-s48jrg"
@@ -82,10 +82,22 @@ Ok "git $(git --version)"
 
 # -- 3. GitHub CLI (optional but nice for pushes) ---------------------------
 if (-not (Have gh)) {
+  Say "Installing GitHub CLI"
+  $done = $false
   if (Have winget) {
-    Say "Installing GitHub CLI"
-    try { winget install -e --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements; Refresh-Path } catch { Warn "gh skipped - pushes will ask for credentials instead" }
-  } else { Warn "winget missing - skipping gh (pushes will use Git's own login prompt)" }
+    try { winget install -e --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements; $done = $true } catch { Warn "winget failed, falling back to direct download" }
+  }
+  if (-not $done) {
+    $rel = Invoke-RestMethod "https://api.github.com/repos/cli/cli/releases/latest"
+    $asset = $rel.assets | Where-Object { $_.name -match "windows_amd64\.msi$" } | Select-Object -First 1
+    if ($asset) {
+      $f = "$env:TEMP\gh-setup.msi"
+      Invoke-WebRequest $asset.browser_download_url -OutFile $f -UseBasicParsing
+      Start-Process msiexec -ArgumentList "/i `"$f`" /qn /norestart" -Wait
+    }
+  }
+  Refresh-Path
+  if (-not (Have gh)) { Warn "gh still missing - pushes will use Git's own login prompt" }
 }
 if (Have gh) { Ok "gh $((gh --version) -split "`n" | Select-Object -First 1)" }
 
@@ -139,10 +151,13 @@ Ok "project ready at $Root\Learn (read HANDOVER-RDP.md there)"
 
 # -- 7. The bridge - this machine becomes the brain -------------------------
 Say "Setting up the HALO bridge"
-if (Test-Path "$PSScriptRoot\bridge.mjs") {
-  Copy-Item "$PSScriptRoot\bridge.mjs" "$Root\bridge\bridge.mjs" -Force
-} else {
-  Invoke-WebRequest "$SiteUrl/bridge.mjs" -OutFile "$Root\bridge\bridge.mjs"
+# always fetch the freshest bridge from the site; local copy is the offline fallback
+try {
+  Invoke-WebRequest "$SiteUrl/bridge.mjs" -OutFile "$Root\bridge\bridge.mjs" -UseBasicParsing
+} catch {
+  if ($PSScriptRoot -and (Test-Path "$PSScriptRoot\bridge.mjs")) {
+    Copy-Item "$PSScriptRoot\bridge.mjs" "$Root\bridge\bridge.mjs" -Force
+  } else { throw "couldn't download bridge.mjs from $SiteUrl and no local copy found" }
 }
 
 $tok = [Environment]::GetEnvironmentVariable("HALO_TOKEN","User")
@@ -154,6 +169,19 @@ if (-not $tok) {
 }
 if (-not $tok.StartsWith("halo_")) { Warn "that key doesn't look right - you can re-run this installer any time" }
 [Environment]::SetEnvironmentVariable("HALO_TOKEN", $tok, "User")
+
+Write-Host ""
+Write-Host "    FULL CONTROL mode: the site's chat can make Claude edit files and run" -ForegroundColor White
+Write-Host "    commands ON THIS MACHINE (no permission prompts). Powerful - and it means" -ForegroundColor White
+Write-Host "    anyone who gets into your HALO account can drive this machine. Your call." -ForegroundColor White
+$fc = Read-Host "    Enable FULL CONTROL brain? (y/N)"
+if ($fc -match '^[Yy]') {
+  [Environment]::SetEnvironmentVariable("HALO_FULL_CONTROL", "1", "User")
+  Ok "FULL CONTROL enabled (unset the HALO_FULL_CONTROL user env var to go back to safe mode)"
+} else {
+  [Environment]::SetEnvironmentVariable("HALO_FULL_CONTROL", $null, "User")
+  Ok "safe mode - tutor can only read the web"
+}
 
 # forever-runner (restarts the bridge if it ever dies)
 @"

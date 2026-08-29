@@ -16,6 +16,7 @@ import { buildProgressDigest } from "@/lib/memory-digest";
 import { Markdown } from "@/components/lesson/Markdown";
 import { TutorBridge } from "@/components/TutorBridge";
 import { AIConnect } from "@/components/tutor/AIConnect";
+import { TUTOR_TASK_EVENT, type TutorTask } from "@/lib/tutor-task";
 
 type Availability = "checking" | "ready" | "no-key" | "connect" | "unauthed";
 
@@ -76,6 +77,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -116,7 +118,20 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
     return () => clearTimeout(timer);
   }, [store.hydrated, nodeId]);
 
-  const send = async (text: string, { summaryRequest = false } = {}) => {
+  // packet blocks can deep-link a task into this panel (TutorTaskLink)
+  useEffect(() => {
+    const onTask = (e: Event) => {
+      const d = (e as CustomEvent<TutorTask>).detail;
+      if (!d?.text || avail !== "ready" || streaming) return;
+      setMode(d.mode);
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      void send(d.text, { modeOverride: d.mode });
+    };
+    window.addEventListener(TUTOR_TASK_EVENT, onTask);
+    return () => window.removeEventListener(TUTOR_TASK_EVENT, onTask);
+  });
+
+  const send = async (text: string, { summaryRequest = false, modeOverride = undefined as TutorMode | undefined } = {}) => {
     if (streaming || !text.trim()) return;
     setNotice(null);
     setChips([]);
@@ -133,7 +148,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
         headers: { "content-type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          nodeId, mode, ...(model ? { model } : {}),
+          nodeId, mode: modeOverride ?? mode, ...(model ? { model } : {}),
           context: buildLearnerContext(nodeId, { nodes: store.nodes, events: store.events, logs: store.logs }, bottleneck),
           messages: history,
         }),
@@ -231,7 +246,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
   const avatarState = streaming ? (speaking ? "speaking" : "thinking") : "idle";
 
   return (
-    <div className="rounded-md border border-line bg-panel p-3">
+    <div ref={rootRef} className="rounded-md border border-line bg-panel p-3">
       <div className="mb-2 flex items-center gap-2.5">
         <TeacherAvatar state={avatarState} />
         <div className="min-w-0 flex-1">
