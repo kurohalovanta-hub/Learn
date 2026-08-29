@@ -23,6 +23,7 @@ function Say($m)  { Write-Host "`n==> $m" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "    OK  $m" -ForegroundColor Green }
 function Warn($m) { Write-Host "    !!  $m" -ForegroundColor Yellow }
 function Have($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
+function Quiet($c)  { cmd /c "$c 2>nul" }
 function Refresh-Path {
   $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
               [Environment]::GetEnvironmentVariable("Path","User")
@@ -100,7 +101,8 @@ if (Have codex)  { Ok "codex $(codex --version)" }
 # -- 5. Sign-ins (each opens a browser - follow the prompts) ----------------
 Say "Sign-ins - four quick browser logins"
 if (Have gh) {
-  if (-not (gh auth status 2>$null | Select-String "Logged in")) {
+  $ghAuth = cmd /c "gh auth status 2>&1"
+  if (-not ($ghAuth -match "Logged in")) {
     Write-Host "    [1/4] GitHub - sign in as kurohalovanta-hub" -ForegroundColor White
     gh auth login --hostname github.com --git-protocol https --web
   } else { Ok "GitHub already signed in" }
