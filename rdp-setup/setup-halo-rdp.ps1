@@ -1,5 +1,5 @@
-# ============================================================================
-#  HALO RDP SETUP — one-shot installer for a clean Windows box
+﻿# ============================================================================
+#  HALO RDP SETUP - one-shot installer for a clean Windows box
 #  Turns this machine into the always-on brain of PROJECT : VANTA HALO.
 #
 #  What it does, in order (each step skips itself if already done):
@@ -9,7 +9,7 @@
 #    4. Clone the whole project to C:\halo\Learn (with HANDOVER docs) + deps
 #    5. Set up the HALO bridge to run forever (auto-starts at logon)
 #
-#  Run via INSTALL.bat (double-click) — or:
+#  Run via INSTALL.bat (double-click) - or:
 #    powershell -ExecutionPolicy Bypass -File .\setup-halo-rdp.ps1
 # ============================================================================
 
@@ -29,11 +29,11 @@ function Refresh-Path {
 }
 
 Write-Host ""
-Write-Host "  H A L O  //  V A N T A   —   RDP brain setup" -ForegroundColor Cyan
+Write-Host "  H A L O  //  V A N T A   -   RDP brain setup" -ForegroundColor Cyan
 Write-Host "  ---------------------------------------------"
 New-Item -ItemType Directory -Force $Root, "$Root\bridge" | Out-Null
 
-# ── 1. Node.js ──────────────────────────────────────────────────────────────
+# -- 1. Node.js --------------------------------------------------------------
 if (-not (Have node)) {
   Say "Installing Node.js LTS"
   $done = $false
@@ -53,10 +53,10 @@ if (-not (Have node)) {
   }
   Refresh-Path
 }
-if (-not (Have node)) { throw "Node.js did not install — open a NEW window and re-run, or install from nodejs.org manually." }
+if (-not (Have node)) { throw "Node.js did not install - open a NEW window and re-run, or install from nodejs.org manually." }
 Ok "node $(node -v)"
 
-# ── 2. Git ──────────────────────────────────────────────────────────────────
+# -- 2. Git ------------------------------------------------------------------
 if (-not (Have git)) {
   Say "Installing Git"
   $done = $false
@@ -75,66 +75,66 @@ if (-not (Have git)) {
   }
   Refresh-Path
 }
-if (-not (Have git)) { throw "Git did not install — re-run in a new window, or install from git-scm.com." }
+if (-not (Have git)) { throw "Git did not install - re-run in a new window, or install from git-scm.com." }
 Ok "git $(git --version)"
 
-# ── 3. GitHub CLI (optional but nice for pushes) ───────────────────────────
+# -- 3. GitHub CLI (optional but nice for pushes) ---------------------------
 if (-not (Have gh)) {
   if (Have winget) {
     Say "Installing GitHub CLI"
-    try { winget install -e --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements; Refresh-Path } catch { Warn "gh skipped — pushes will ask for credentials instead" }
-  } else { Warn "winget missing — skipping gh (pushes will use Git's own login prompt)" }
+    try { winget install -e --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements; Refresh-Path } catch { Warn "gh skipped - pushes will ask for credentials instead" }
+  } else { Warn "winget missing - skipping gh (pushes will use Git's own login prompt)" }
 }
 if (Have gh) { Ok "gh $((gh --version) -split "`n" | Select-Object -First 1)" }
 
-# ── 4. Vercel + Claude Code + Codex CLIs ───────────────────────────────────
+# -- 4. Vercel + Claude Code + Codex CLIs -----------------------------------
 Say "Installing Vercel, Claude Code, and Codex CLIs (npm)"
 npm install -g vercel@latest | Out-Null
 npm install -g @anthropic-ai/claude-code | Out-Null
-try { npm install -g @openai/codex | Out-Null } catch { Warn "Codex CLI install failed — the bridge will use Claude Code only" }
+try { npm install -g @openai/codex | Out-Null } catch { Warn "Codex CLI install failed - the bridge will use Claude Code only" }
 Refresh-Path
 Ok "vercel $(vercel --version 2>$null | Select-Object -First 1)"
-if (Have claude) { Ok "claude $(claude --version)" } else { Warn "claude not on PATH yet — open a new window after setup" }
+if (Have claude) { Ok "claude $(claude --version)" } else { Warn "claude not on PATH yet - open a new window after setup" }
 if (Have codex)  { Ok "codex $(codex --version)" }
 
-# ── 5. Sign-ins (each opens a browser — follow the prompts) ────────────────
-Say "Sign-ins — four quick browser logins"
+# -- 5. Sign-ins (each opens a browser - follow the prompts) ----------------
+Say "Sign-ins - four quick browser logins"
 if (Have gh) {
   if (-not (gh auth status 2>$null | Select-String "Logged in")) {
-    Write-Host "    [1/4] GitHub — sign in as kurohalovanta-hub" -ForegroundColor White
+    Write-Host "    [1/4] GitHub - sign in as kurohalovanta-hub" -ForegroundColor White
     gh auth login --hostname github.com --git-protocol https --web
   } else { Ok "GitHub already signed in" }
 } else { Warn "[1/4] GitHub skipped (no gh)" }
 
-Write-Host "    [2/4] Vercel — sign in as your Vercel account (kurohalovanta-8910)" -ForegroundColor White
+Write-Host "    [2/4] Vercel - sign in as your Vercel account (kurohalovanta-8910)" -ForegroundColor White
 vercel whoami 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { vercel login } else { Ok "Vercel already signed in" }
 
 if (Have codex) {
-  Write-Host "    [3/4] ChatGPT Codex — sign in with your ChatGPT account" -ForegroundColor White
+  Write-Host "    [3/4] ChatGPT Codex - sign in with your ChatGPT account" -ForegroundColor White
   $st = codex login status 2>&1
   if ($st -match "Logged in") { Ok "Codex already signed in" } else { codex login }
 }
 
-Write-Host "    [4/4] Claude Code — a Claude window opens NOW. Complete the sign-in," -ForegroundColor White
+Write-Host "    [4/4] Claude Code - a Claude window opens NOW. Complete the sign-in," -ForegroundColor White
 Write-Host "          then QUIT it (Ctrl+C twice) and setup continues." -ForegroundColor White
 if (Have claude) { claude } else { Warn "run 'claude' yourself in a new window afterwards" }
 
-# ── 6. The project ─────────────────────────────────────────────────────────
+# -- 6. The project ---------------------------------------------------------
 Say "Cloning HALO to $Root\Learn"
 if (-not (Test-Path "$Root\Learn\.git")) {
   git clone $RepoUrl "$Root\Learn"
 } else { Ok "already cloned" }
 git -C "$Root\Learn" checkout $Branch
 git -C "$Root\Learn" pull origin $Branch
-Say "Installing site dependencies (this is the slow one — a few minutes)"
+Say "Installing site dependencies (this is the slow one - a few minutes)"
 Push-Location "$Root\Learn"
 npm install
-try { vercel link --yes --scope vantahalo --project learn | Out-Null; Ok "linked to Vercel project 'learn'" } catch { Warn "Vercel link skipped — run 'vercel link' in $Root\Learn later" }
+try { vercel link --yes --scope vantahalo --project learn | Out-Null; Ok "linked to Vercel project 'learn'" } catch { Warn "Vercel link skipped - run 'vercel link' in $Root\Learn later" }
 Pop-Location
 Ok "project ready at $Root\Learn (read HANDOVER-RDP.md there)"
 
-# ── 7. The bridge — this machine becomes the brain ─────────────────────────
+# -- 7. The bridge - this machine becomes the brain -------------------------
 Say "Setting up the HALO bridge"
 if (Test-Path "$PSScriptRoot\bridge.mjs") {
   Copy-Item "$PSScriptRoot\bridge.mjs" "$Root\bridge\bridge.mjs" -Force
@@ -149,7 +149,7 @@ if (-not $tok) {
   Write-Host "    connections -> 'create bridge key' (starts with halo_)" -ForegroundColor White
   $tok = (Read-Host "    Paste the bridge key here").Trim()
 }
-if (-not $tok.StartsWith("halo_")) { Warn "that key doesn't look right — you can re-run this installer any time" }
+if (-not $tok.StartsWith("halo_")) { Warn "that key doesn't look right - you can re-run this installer any time" }
 [Environment]::SetEnvironmentVariable("HALO_TOKEN", $tok, "User")
 
 # forever-runner (restarts the bridge if it ever dies)
@@ -171,7 +171,7 @@ schtasks /Run /TN "HALO Bridge" | Out-Null
 Start-Sleep 3
 Ok "bridge installed as a logon task and started (log: C:\halo\bridge\bridge.log)"
 
-# ── done ───────────────────────────────────────────────────────────────────
+# -- done -------------------------------------------------------------------
 Write-Host ""
 Write-Host "  ---------------------------------------------" -ForegroundColor Cyan
 Write-Host "  DONE. This machine is now HALO's brain." -ForegroundColor Green
