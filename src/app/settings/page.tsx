@@ -6,6 +6,7 @@ import { useStore, migrate } from "@/lib/store";
 import { useAuth } from "@/lib/auth-client";
 import { pullAndMerge, pushNow, resetSyncLifecycle } from "@/lib/sync";
 import { buildProgressDigest } from "@/lib/memory-digest";
+import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
 import { Panel, SectionTitle } from "@/components/ui";
 import type { ProgressData } from "@/lib/types";
 
@@ -152,6 +153,12 @@ export default function SettingsPage() {
           </div>
         )}
         {msg && <div className="mt-2 text-xs text-dim">{msg}</div>}
+      </Panel>
+
+      {/* tutor */}
+      <Panel accent="#52d68a">
+        <SectionTitle>tutor</SectionTitle>
+        <TutorStatusCard />
       </Panel>
 
       {/* program */}

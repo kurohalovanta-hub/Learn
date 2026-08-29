@@ -418,12 +418,26 @@ export interface Settings {
   updatedAt: number;
 }
 
+export interface TutorChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** Persisted tutor conversation for one node — capped, synced per account (LWW per node). */
+export interface TutorChat {
+  nodeId: string;
+  messages: TutorChatMessage[];
+  updatedAt: number;
+}
+
 export interface ProgressData {
   schema: number;
   rev: number;
   nodes: Record<string, NodeProgress>;
   /** Append-only evidence log — the source of truth `nodes` is derived from. */
   events: EvidenceRecord[];
+  /** Tutor chat logs by node id — follow the account across devices/sign-ins. */
+  tutorChats: Record<string, TutorChat>;
   logs: SessionLog[];
   papers: Record<string, PaperProgress>;
   projects: Record<string, ProjectProgress>;

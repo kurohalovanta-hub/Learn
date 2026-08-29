@@ -5,7 +5,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   BossAttempt, DayPlan, DefenseResult, EvidenceRecord, ExperimentRecord, Idea, Independence,
   IndependenceLevel, NodeProgress, PaperStatus, ProgressData, ProjectStatus, SessionLog,
-  Settings, Tier, WeeklyReview,
+  Settings, Tier, TutorChat, TutorChatMessage, WeeklyReview,
 } from "@/lib/types";
 import { initialReview, nextReview, type ReviewOutcome } from "@/lib/engine/review";
 import { deriveNode } from "@/lib/engine/competency";
@@ -20,6 +20,7 @@ const emptyData = (): ProgressData => ({
   rev: 0,
   nodes: {},
   events: [],
+  tutorChats: {},
   logs: [],
   papers: {},
   projects: {},
@@ -54,6 +55,9 @@ export interface StoreState extends ProgressData {
   recordManualOverride: (id: string, tier: Tier, note?: string) => void;
   resetNode: (id: string) => void;
   reviewNode: (id: string, outcome: ReviewOutcome, sketch?: string) => void;
+  // tutor chat log — synced per account, capped so it can never wedge the 4MB sync doc
+  saveTutorChat: (nodeId: string, messages: TutorChatMessage[]) => void;
+  clearTutorChat: (nodeId: string) => void;
   // logs
   addLog: (log: Omit<SessionLog, "id" | "updatedAt">) => void;
   deleteLog: (id: string) => void;
@@ -205,6 +209,33 @@ export const useStore = create<StoreState>()(
           const nodes = { ...s.nodes };
           delete nodes[id];
           return { ...touch(s), events, nodes };
+        }),
+
+      saveTutorChat: (nodeId, messages) =>
+        set((s) => {
+          // caps: last 30 messages, 2500 chars each, 12 most-recent nodes
+          const trimmed: TutorChatMessage[] = messages.slice(-30).map((m) => ({
+            role: m.role,
+            content: m.content.length > 2500 ? `${m.content.slice(0, 2500)}…` : m.content,
+          }));
+          const chats: Record<string, TutorChat> = {
+            ...s.tutorChats,
+            [nodeId]: { nodeId, messages: trimmed, updatedAt: Date.now() },
+          };
+          const ids = Object.keys(chats);
+          if (ids.length > 12) {
+            for (const id of ids.sort((a, b) => chats[a].updatedAt - chats[b].updatedAt).slice(0, ids.length - 12)) {
+              delete chats[id];
+            }
+          }
+          return { ...touch(s), tutorChats: chats };
+        }),
+
+      clearTutorChat: (nodeId) =>
+        set((s) => {
+          const chats = { ...s.tutorChats };
+          delete chats[nodeId];
+          return { ...touch(s), tutorChats: chats };
         }),
 
       reviewNode: (id, outcome, sketch) =>
@@ -365,7 +396,7 @@ export const useStore = create<StoreState>()(
       exportData: () => {
         const s = get();
         return {
-          schema: s.schema, rev: s.rev, nodes: s.nodes, events: s.events, logs: s.logs, papers: s.papers,
+          schema: s.schema, rev: s.rev, nodes: s.nodes, events: s.events, tutorChats: s.tutorChats, logs: s.logs, papers: s.papers,
           projects: s.projects, experiments: s.experiments, ideas: s.ideas,
           bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
           dayPlans: s.dayPlans, settings: s.settings,
@@ -407,6 +438,7 @@ export const useStore = create<StoreState>()(
             ...touch(s),
             events,
             nodes,
+            tutorChats: mergeMap(s.tutorChats, r.tutorChats),
             papers: mergeMap(s.papers, r.papers),
             projects: mergeMap(s.projects, r.projects),
             weeklies: mergeMap(s.weeklies, r.weeklies),
@@ -431,11 +463,11 @@ export const useStore = create<StoreState>()(
       skipHydration: true,
       migrate: (persisted) => {
         const p = (persisted ?? {}) as Partial<StoreState>;
-        const base: Partial<StoreState> = { ...p, lessons: p.lessons ?? {}, dayPlans: p.dayPlans ?? {}, owner: p.owner ?? null };
+        const base: Partial<StoreState> = { ...p, lessons: p.lessons ?? {}, dayPlans: p.dayPlans ?? {}, tutorChats: p.tutorChats ?? {}, owner: p.owner ?? null };
         return migrateEvents(base) as StoreState;
       },
       partialize: (s) => ({
-        schema: SCHEMA_VERSION, rev: s.rev, owner: s.owner, nodes: s.nodes, events: s.events, logs: s.logs,
+        schema: SCHEMA_VERSION, rev: s.rev, owner: s.owner, nodes: s.nodes, events: s.events, tutorChats: s.tutorChats, logs: s.logs,
         papers: s.papers, projects: s.projects, experiments: s.experiments, ideas: s.ideas,
         bossAttempts: s.bossAttempts, weeklies: s.weeklies, lessons: s.lessons,
         dayPlans: s.dayPlans, settings: s.settings,
@@ -484,6 +516,7 @@ export function migrate(data: ProgressData): ProgressData {
     ...data,
     schema: SCHEMA_VERSION,
     events: data.events ?? [],
+    tutorChats: data.tutorChats ?? {},
     lessons: data.lessons ?? {},
     dayPlans: data.dayPlans ?? {},
     settings: { ...base.settings, ...data.settings },

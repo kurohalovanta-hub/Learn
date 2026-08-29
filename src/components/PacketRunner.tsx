@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import type { LearningPacket } from "@/lib/packet-types";
 import { AssessmentBox } from "./AssessmentBox";
 import { LiveTutor } from "./tutor/LiveTutor";
+import { SmartText } from "./SmartText";
 import { VideoCard } from "./VideoCard";
 
 /**
@@ -128,7 +129,7 @@ export function PacketRunner({ packet, curated }: { packet: LearningPacket; cura
         <div className="space-y-2">
           {packet.practice.map((pr, i) => (
             <div key={i} className="rounded-md border border-line bg-panel2/50 px-3 py-2.5">
-              <div className="text-[13px] text-ink">{pr.prompt}</div>
+              <div className="text-[13px] leading-relaxed text-ink"><SmartText>{pr.prompt}</SmartText></div>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 {pr.source && <a className="text-xs text-acc hover:underline" href={pr.source} target="_blank" rel="noopener noreferrer">source ↗</a>}
                 {pr.minutes && <span className="font-mono text-[10.5px] text-faint">~{pr.minutes} min</span>}
@@ -183,7 +184,7 @@ export function PacketRunner({ packet, curated }: { packet: LearningPacket; cura
       body: (
         <div className="space-y-2">
           <div className="text-[13px] leading-relaxed text-ink">
-            <span className="mono-label mr-2 text-acc-robot">the bar →</span>{packet.prove.task}
+            <span className="mono-label mr-2 text-acc-robot">the bar →</span><SmartText>{packet.prove.task}</SmartText>
           </div>
           <ul className="space-y-0.5 pl-1 text-[12px] text-dim">
             {packet.prove.criteria.map((c, i) => (

@@ -11,6 +11,8 @@ import { reviewQueue } from "@/lib/engine/review";
 import { LEVELS } from "@/content/levels";
 import { PAPERS } from "@/content/papers";
 import { Bar, EmptyState, NodePill, Panel, SectionTitle, Stat } from "@/components/ui";
+import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
+import { NODES } from "@/content/nodes";
 
 export default function Dashboard() {
   const store = useStore();
@@ -45,8 +47,9 @@ export default function Dashboard() {
         <div>
           <div className="mono-label">{research ? "research command center" : "mission control"}</div>
           <h1 className="mt-1 font-mono text-2xl font-bold tracking-tight">
-            {day ? `DAY ${Math.min(day, 210)} / 210` : "DAY 0 — BOOT"}
-            {phase && <span className="ml-3 text-sm font-normal text-dim">Month {phase.month} · {phase.title}</span>}
+            {Object.values(data.nodes).filter((p) => p.verified).length}
+            <span className="text-dim"> / {NODES.length} verified</span>
+            {phase && <span className="ml-3 text-sm font-normal text-dim">Month {phase.month} · {phase.title}{day ? ` · d${Math.min(day, 210)}` : ""}</span>}
           </h1>
         </div>
         <div className="flex gap-2">
@@ -59,6 +62,7 @@ export default function Dashboard() {
       {isFresh && (
         <Panel accent="#e8b34d">
           <SectionTitle>new here — 3 things and you&apos;re oriented</SectionTitle>
+          <div className="mb-3"><TutorStatusCard /></div>
           <div className="grid gap-2 text-sm text-dim md:grid-cols-3">
             <div>
               <span className="font-mono text-xs text-acc">01</span>{" "}

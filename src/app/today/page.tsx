@@ -15,6 +15,7 @@ import type { LearningPacket } from "@/lib/packet-types";
 import type { Block, Independence, SkillNode } from "@/lib/types";
 import { LiveTutor } from "@/components/tutor/LiveTutor";
 import { Panel } from "@/components/ui";
+import { SmartText } from "@/components/SmartText";
 
 // ONE objective (HANDOVERFINAL §30): the current bottleneck, its capability
 // target, the next few packet steps — and nothing else above the fold.
@@ -120,7 +121,7 @@ export default function TodayPage() {
           </h1>
           <div className="mt-3">
             <div className="mono-label">today&apos;s capability target</div>
-            <p className="mt-0.5 text-[14px] leading-relaxed text-ink">{packet?.prove.task ?? bottleneck.masteryTest}</p>
+            <p className="mt-0.5 text-[14px] leading-relaxed text-ink"><SmartText>{packet?.prove.task ?? bottleneck.masteryTest}</SmartText></p>
           </div>
           <div className="mt-3">
             <div className="mono-label">why now</div>

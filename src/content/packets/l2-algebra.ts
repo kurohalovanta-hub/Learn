@@ -5,10 +5,10 @@ import type { LearningPacket } from "@/lib/packet-types";
 export const packet: LearningPacket = {
   nodeId: "l2-algebra",
   whyNow:
-    "You are not re-taking school. 'Bad at math' almost always means 8–15 specific broken skills, and a cold diagnostic names them precisely in under an hour — then you patch exactly those and nothing else. The non-negotiable payoff is log/exponent fluency: log rules are how you will read every loss curve and learning-rate schedule for the next 200 days. Here the diagnostic IS the path; the packet body exists only for what it exposes.",
+    "'Bad at math' usually means 8–15 specific broken skills, not a general condition. One cold test names yours in under an hour; you fix only those and skip the rest. The skill that has to come out of this node: reading logs and exponents without thinking, because every loss curve you will ever plot lives on a log axis.",
   diagnostic: {
     prompt:
-      "Cold, one sitting, no notes (free Khan account so results persist): take the Algebra 1 Course Challenge — https://www.khanacademy.org/math/algebra/test/x2f8bb11595b61c86:course-challenge (~30–40 min) — and screenshot the skill-level breakdown. If ≥85%: the same day, take the Algebra 2 Course Challenge cold — https://www.khanacademy.org/math/algebra2/test/x2ec2f6f830c9fb89:course-challenge (~40 min). Use Skip, never guess (a skip is marked incorrect, which is what you want — honest diagnosis), and know that a challenge cannot be restarted mid-attempt. Alg 2 ≥85% ⇒ skip all patching below; the three core unit tests, the log-law derivation and the OpenStax prove-it still stand. Hints used on any question = that skill is broken; log it.",
+      "Take the Algebra 1 Course Challenge cold — one sitting, no notes, on a free Khan account so results save: https://www.khanacademy.org/math/algebra/test/x2f8bb11595b61c86:course-challenge (~35 min). Screenshot the skill breakdown. Scored 85% or more? Take the Algebra 2 Course Challenge the same day: https://www.khanacademy.org/math/algebra2/test/x2ec2f6f830c9fb89:course-challenge (~40 min). Pass that too and you skip all the patching below — only the log-law derivation and the closed-book prove-it remain. Three rules: press Skip instead of guessing (a skip counts as wrong, which is the honest reading), a challenge can't be restarted once started, and any question where you needed a hint is a broken skill — write it down.",
     minutes: 70,
     repair: true,
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
 import { useAuth } from "@/lib/auth-client";
 import { startSync } from "@/lib/sync";
 
@@ -127,8 +128,10 @@ export function LoginGate() {
           </form>
         </div>
 
+        <div className="mt-4"><TutorStatusCard /></div>
+
         <p className="mt-4 text-center text-[11px] text-faint">
-          Progress is stored per account and synced across your devices.
+          Progress is stored per account and synced across your devices — tutor chats included.
         </p>
       </div>
     </div>

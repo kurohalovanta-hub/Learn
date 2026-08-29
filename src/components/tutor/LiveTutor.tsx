@@ -93,6 +93,19 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // restore the persisted chat log for this node (follows the account via sync).
+  // Idempotent — StrictMode double-mount just re-schedules; the functional
+  // update never clobbers a conversation already on screen.
+  useEffect(() => {
+    if (!store.hydrated) return;
+    const saved = useStore.getState().tutorChats[nodeId];
+    if (!saved?.messages.length) return;
+    const timer = setTimeout(() => {
+      setMessages((cur) => (cur.length === 0 ? saved.messages : cur));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [store.hydrated, nodeId]);
+
   const send = async (text: string, { summaryRequest = false } = {}) => {
     if (streaming || !text.trim()) return;
     setNotice(null);
@@ -131,17 +144,20 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
       }
       const opts = parseOpts(full);
       if (opts.length) setChips(opts);
+      if (full) store.saveTutorChat(nodeId, [...history, { role: "assistant", content: stripOpts(full) }]);
 
       if (summaryRequest) {
         const parsed = parseTutorSummary(full);
         if (parsed.ok) {
           const evs = summaryToEvidence(parsed.summary);
           for (const e of evs) store.recordEvidence(e);
-          setMessages([...history, {
+          const done: Msg = {
             role: "assistant",
             content: `✓ Session logged — ${evs.length} evidence entries recorded. A tutor session supports progress; the typed prove-it is still yours to do.`,
-          }]);
+          };
+          setMessages([...history, done]);
           setChips([]);
+          store.saveTutorChat(nodeId, [...history, done]);
         } else {
           setNotice(`Couldn't parse the session summary (${parsed.error}) — evidence not logged.`);
         }
@@ -294,13 +310,22 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           {labOpen ? "▾ code lab" : "▸ code lab — write python, run it for real, get it reviewed"}
         </button>
         {messages.length > 1 && (
-          <button
-            className="ml-auto font-mono text-[11px] text-acc-robot underline-offset-2 hover:underline disabled:opacity-40"
-            disabled={streaming}
-            onClick={() => void send("End the session now. Output only the end-of-session summary JSON.", { summaryRequest: true })}
-          >
-            end session → log evidence
-          </button>
+          <span className="ml-auto flex items-center gap-3">
+            <button
+              className="font-mono text-[11px] text-faint underline-offset-2 hover:text-alert hover:underline disabled:opacity-40"
+              disabled={streaming}
+              onClick={() => { store.clearTutorChat(nodeId); setMessages([]); setChips([]); }}
+            >
+              clear log
+            </button>
+            <button
+              className="font-mono text-[11px] text-acc-robot underline-offset-2 hover:underline disabled:opacity-40"
+              disabled={streaming}
+              onClick={() => void send("End the session now. Output only the end-of-session summary JSON.", { summaryRequest: true })}
+            >
+              end session → log evidence
+            </button>
+          </span>
         )}
       </div>
 

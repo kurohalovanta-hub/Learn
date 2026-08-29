@@ -13,6 +13,7 @@ import { useStore } from "@/lib/store";
 import { nodeState, missingPrereqs, unlocks, DEFAULT_EDGE_TIER } from "@/lib/engine/graph";
 import { Katex, NodePill, Panel, SectionTitle, StateBadge, TierBadge, TIER_COLORS } from "@/components/ui";
 import { assessWithMoment } from "@/components/MasteryMoment";
+import { SmartText } from "@/components/SmartText";
 import { AssessmentBox } from "@/components/AssessmentBox";
 import { PacketRunner } from "@/components/PacketRunner";
 import { independenceFromChoice } from "@/lib/engine/competency";
@@ -88,17 +89,17 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
       {/* why */}
       <Panel accent={level.accent}>
         <SectionTitle>why now</SectionTitle>
-        <p className="text-[14px] leading-relaxed text-ink">{pk.whyNow}</p>
+        <p className="text-[14px] leading-relaxed text-ink"><SmartText>{pk.whyNow}</SmartText></p>
       </Panel>
 
       {/* repair-class nodes lead with the test-out (Δ1: test out first, patch only gaps) */}
       {pk.diagnostic?.repair && (
         <Panel accent="#e8b34d">
           <SectionTitle>test out first — only patch what breaks</SectionTitle>
-          <p className="text-sm text-dim">{pk.diagnostic.prompt}</p>
+          <p className="text-sm leading-relaxed text-dim"><SmartText>{pk.diagnostic.prompt}</SmartText></p>
           <p className="mt-1 mb-2 text-[11px] text-faint">
-            ~{pk.diagnostic.minutes} min. Pass → skip this node now. The path below is the patching
-            route for whatever the diagnostic exposes — never redo what you still own.
+            ~{pk.diagnostic.minutes} min. Pass → skip this node. Everything below is only for
+            patching what the diagnostic exposes.
           </p>
           <AssessmentBox id={id} diagnostic />
         </Panel>
@@ -259,7 +260,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
               <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-widest text-dim hover:text-acc">
                 already know this? test out
               </summary>
-              <p className="mt-2 text-sm text-dim">{node.diagnostic}</p>
+              <p className="mt-2 text-sm text-dim"><SmartText>{node.diagnostic}</SmartText></p>
               <p className="mt-1 text-[11px] text-faint">
                 Prove it cold below — passing skips this node now (never wait on the calendar). A quick
                 review lands in ~2 days to make sure it was real.
