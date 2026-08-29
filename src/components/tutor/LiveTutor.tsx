@@ -1,0 +1,332 @@
+"use client";
+
+// The live virtual teacher (ADR-005). Streams grounded Claude replies, ends
+// every turn in tap-options so typing is optional, runs learner code for real
+// (Pyodide) before review, and logs sessions through the existing
+// summary → evidence path so the honesty engine stays the single authority.
+
+import { useEffect, useRef, useState } from "react";
+import { useStore } from "@/lib/store";
+import {
+  buildLearnerContext, parseTutorSummary, summaryToEvidence,
+  TUTOR_MODE_LABELS, type TutorMode,
+} from "@/lib/tutor";
+import { runPython, type RunResult } from "@/lib/pyodide-runner";
+import { Markdown } from "@/components/lesson/Markdown";
+import { TutorBridge } from "@/components/TutorBridge";
+
+type Availability = "checking" | "ready" | "no-key" | "needs-accounts" | "unauthed";
+
+interface Msg {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const OPTS_RE = /\[\[opts:([^\]]+)\]\]\s*$/;
+const DEPTH_CHIPS = ["shorter", "go deeper", "show me an example", "skip ahead — I know this"];
+const STARTERS = [
+  "Teach me this from zero.",
+  "Quiz me first — maybe I can skip parts.",
+  "Why does this node matter for the goal?",
+  "I'm stuck — diagnose what I'm missing.",
+];
+
+function TeacherAvatar({ state }: { state: "idle" | "thinking" | "speaking" }) {
+  const acc = "var(--color-acc)";
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden>
+      <circle cx="17" cy="17" r="15.5" fill="none" stroke="var(--color-line2)" strokeWidth="1" />
+      <circle
+        cx="17" cy="17" r="15.5" fill="none" stroke={acc} strokeWidth="1.5"
+        strokeDasharray={state === "thinking" ? "10 14" : state === "speaking" ? "40 8" : "97 0"}
+        strokeLinecap="round" opacity={state === "idle" ? 0.35 : 0.9}
+        style={state !== "idle" ? { animation: "tutor-orbit 2.2s linear infinite", transformOrigin: "center" } : undefined}
+      />
+      <circle
+        cx="17" cy="17" r={state === "speaking" ? 6.5 : 5.5} fill={acc}
+        opacity={state === "idle" ? 0.5 : 0.95}
+        style={state === "speaking" ? { animation: "tutor-breathe 1.1s ease-in-out infinite" } : undefined}
+      />
+    </svg>
+  );
+}
+
+export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?: string }) {
+  const store = useStore();
+  const [avail, setAvail] = useState<Availability>("checking");
+  const [mode, setMode] = useState<TutorMode>("teach");
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [chips, setChips] = useState<string[]>([]);
+  const [input, setInput] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [labOpen, setLabOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/tutor")
+      .then((r) => r.json())
+      .then((j: { available?: boolean; reason?: string }) => {
+        if (!alive) return;
+        setAvail(j.available ? "ready" : j.reason === "needs-accounts" ? "needs-accounts" : "no-key");
+      })
+      .catch(() => { if (alive) setAvail("no-key"); });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const send = async (text: string, { summaryRequest = false } = {}) => {
+    if (streaming || !text.trim()) return;
+    setNotice(null);
+    setChips([]);
+    const history: Msg[] = [...messages, { role: "user", content: text.trim() }];
+    setMessages([...history, { role: "assistant", content: "" }]);
+    setStreaming(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let full = "";
+    try {
+      const res = await fetch("/api/tutor", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          nodeId, mode,
+          context: buildLearnerContext(nodeId, { nodes: store.nodes, events: store.events, logs: store.logs }, bottleneck),
+          messages: history,
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const j = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (res.status === 401) setAvail("unauthed");
+        setMessages([...history, { role: "assistant", content: `⚠ ${j?.error ?? `tutor unavailable (${res.status})`}` }]);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        const shown = full.replace(OPTS_RE, "");
+        setMessages([...history, { role: "assistant", content: shown }]);
+      }
+      const m = full.match(OPTS_RE);
+      if (m) setChips(m[1].split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4));
+
+      if (summaryRequest) {
+        const parsed = parseTutorSummary(full);
+        if (parsed.ok) {
+          const evs = summaryToEvidence(parsed.summary);
+          for (const e of evs) store.recordEvidence(e);
+          setMessages([...history, {
+            role: "assistant",
+            content: `✓ Session logged — ${evs.length} evidence entries recorded. A tutor session supports progress; the typed prove-it is still yours to do.`,
+          }]);
+          setChips([]);
+        } else {
+          setNotice(`Couldn't parse the session summary (${parsed.error}) — evidence not logged.`);
+        }
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        setMessages([...history, { role: "assistant", content: "⚠ connection dropped — send that again." }]);
+      }
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
+  };
+
+  const runCode = async () => {
+    if (running || !code.trim()) return;
+    setRunning(true);
+    setRunResult(null);
+    const result = await runPython(code);
+    setRunResult(result);
+    setRunning(false);
+  };
+
+  const sendCodeToTutor = () => {
+    const out = runResult
+      ? `\n\nREAL OUTPUT (in-browser Python, ${runResult.ms} ms):\n\`\`\`\n${(runResult.stdout || "").slice(0, 3000)}${runResult.error ? `\nERROR: ${runResult.error}` : ""}\n\`\`\``
+      : "\n\n(not run yet — review the code as written)";
+    void send(`Review my code for this node's practice work.\n\`\`\`python\n${code.slice(0, 6000)}\n\`\`\`${out}\n\nWhere am I wrong, and what did I get right?`);
+  };
+
+  if (avail === "checking") return null;
+
+  if (avail !== "ready") {
+    return (
+      <div className="rounded-md border border-line bg-panel2/50 p-3">
+        <div className="mono-label mb-1.5">live tutor — not enabled on this deployment</div>
+        <div className="mb-2 text-[12px] text-faint">
+          {avail === "no-key" && "Set ANTHROPIC_API_KEY (and redeploy) to wake the resident tutor. Until then, the copy-paste bridge below works with any AI."}
+          {avail === "needs-accounts" && "The tutor needs accounts (attach Redis) so it isn't an open endpoint. Until then, the copy-paste bridge below works with any AI."}
+          {avail === "unauthed" && "Sign in to talk to the tutor. Until then, the copy-paste bridge below works with any AI."}
+        </div>
+        <TutorBridge nodeId={nodeId} bottleneck={bottleneck} compact />
+      </div>
+    );
+  }
+
+  const speaking = streaming && messages[messages.length - 1]?.content !== "";
+  const avatarState = streaming ? (speaking ? "speaking" : "thinking") : "idle";
+
+  return (
+    <div className="rounded-md border border-line bg-panel p-3">
+      <div className="mb-2 flex items-center gap-2.5">
+        <TeacherAvatar state={avatarState} />
+        <div className="min-w-0 flex-1">
+          <div className="mono-label">resident tutor · live</div>
+          <div className="truncate text-[11.5px] text-faint">
+            {streaming ? (speaking ? "explaining…" : "thinking…") : "grounded in this node's curated materials — ask anything"}
+          </div>
+        </div>
+        <select
+          value={mode}
+          onChange={(e) => setMode(e.target.value as TutorMode)}
+          disabled={streaming}
+          className="!w-auto !py-1 font-mono !text-[11.5px]"
+          aria-label="tutor mode"
+        >
+          {(Object.keys(TUTOR_MODE_LABELS) as TutorMode[]).map((m) => (
+            <option key={m} value={m}>{TUTOR_MODE_LABELS[m]}</option>
+          ))}
+        </select>
+      </div>
+
+      {messages.length > 0 && (
+        <div ref={scrollRef} className="mb-2 max-h-[420px] space-y-2 overflow-y-auto pr-1">
+          {messages.map((m, i) => (
+            <div key={i} className={m.role === "user" ? "flex justify-end" : "flex"}>
+              <div
+                className={
+                  m.role === "user"
+                    ? "max-w-[85%] rounded-lg border border-acc/25 bg-acc/8 px-3 py-2 text-[13px] whitespace-pre-wrap"
+                    : "max-w-[92%] rounded-lg border border-line bg-panel2 px-3 py-2"
+                }
+              >
+                {m.role === "assistant"
+                  ? m.content
+                    ? <Markdown className="!text-[13.5px]">{m.content}</Markdown>
+                    : <span className="font-mono text-[12px] text-faint">…</span>
+                  : m.content}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* tap options — the no-typing path */}
+      <div className="flex flex-wrap gap-1.5">
+        {(messages.length === 0 ? STARTERS : chips).map((c) => (
+          <button
+            key={c}
+            disabled={streaming}
+            onClick={() => void send(c)}
+            className="rounded-full border border-acc/35 bg-panel2 px-3 py-1.5 text-[12px] text-acc transition-colors hover:bg-acc/10 disabled:opacity-40"
+          >
+            {c}
+          </button>
+        ))}
+        {messages.length > 0 && !streaming &&
+          DEPTH_CHIPS.filter((d) => !chips.includes(d)).map((d) => (
+            <button
+              key={d}
+              onClick={() => void send(d)}
+              className="rounded-full border border-line2 bg-panel2 px-3 py-1.5 text-[12px] text-dim transition-colors hover:border-acc/40 hover:text-acc"
+            >
+              {d}
+            </button>
+          ))}
+      </div>
+
+      <div className="mt-2 flex items-end gap-1.5">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              const t = input; setInput("");
+              void send(t);
+            }
+          }}
+          rows={1}
+          placeholder="or type — Enter sends"
+          className="min-h-[38px] flex-1 resize-y !text-[13px]"
+        />
+        <button
+          className="btn !py-2 text-xs"
+          disabled={streaming || !input.trim()}
+          onClick={() => { const t = input; setInput(""); void send(t); }}
+        >
+          send
+        </button>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          className="font-mono text-[11px] text-dim underline-offset-2 hover:text-acc hover:underline"
+          onClick={() => setLabOpen(!labOpen)}
+        >
+          {labOpen ? "▾ code lab" : "▸ code lab — write python, run it for real, get it reviewed"}
+        </button>
+        {messages.length > 1 && (
+          <button
+            className="ml-auto font-mono text-[11px] text-acc-robot underline-offset-2 hover:underline disabled:opacity-40"
+            disabled={streaming}
+            onClick={() => void send("End the session now. Output only the end-of-session summary JSON.", { summaryRequest: true })}
+          >
+            end session → log evidence
+          </button>
+        )}
+      </div>
+
+      {labOpen && (
+        <div className="rise-in mt-2 space-y-1.5">
+          <textarea
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            rows={7}
+            spellCheck={false}
+            placeholder={"# real Python, runs in your browser (numpy works)\nimport numpy as np\nprint(np.linalg.eigvals(np.array([[2., 0.], [0., 3.]])))"}
+            className="w-full font-mono !text-[12.5px]"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            <button className="btn !py-1.5 text-xs" disabled={running || !code.trim()} onClick={() => void runCode()}>
+              {running ? "running… (first run downloads Python, ~10 MB)" : "▶ run"}
+            </button>
+            <button
+              className="rounded-md border border-line2 bg-panel2 px-2.5 py-1.5 font-mono text-[11.5px] text-dim transition-colors hover:border-acc/50 hover:text-acc disabled:opacity-40"
+              disabled={streaming || !code.trim()}
+              onClick={sendCodeToTutor}
+            >
+              review with tutor{runResult ? " (with real output)" : ""}
+            </button>
+          </div>
+          {runResult && (
+            <pre className={`max-h-52 overflow-auto rounded-md border p-2.5 font-mono text-[12px] whitespace-pre-wrap ${runResult.ok ? "border-line bg-panel2 text-ink" : "border-alert/40 bg-panel2 text-alert"}`}>
+              {runResult.stdout || (runResult.ok ? "(no output)" : "")}
+              {runResult.error ? `\n${runResult.error}` : ""}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {notice && <div className="mt-1.5 text-[11.5px] text-warn">{notice}</div>}
+    </div>
+  );
+}

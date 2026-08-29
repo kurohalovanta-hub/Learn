@@ -226,6 +226,14 @@ input[type="range"]::-moz-range-thumb {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* live tutor avatar (LiveTutor.tsx) */
+@keyframes tutor-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes tutor-breathe {
+  0%, 100% { r: 5.5; opacity: 0.85; }
+  50% { r: 7; opacity: 1; }
+}
 .rise-in {
   animation: rise-in 240ms var(--ease-out) both;
 }

@@ -8,7 +8,7 @@ import { unlocks } from "@/lib/engine/graph";
 import { useStore } from "@/lib/store";
 import type { LearningPacket } from "@/lib/packet-types";
 import { AssessmentBox } from "./AssessmentBox";
-import { TutorBridge } from "./TutorBridge";
+import { LiveTutor } from "./tutor/LiveTutor";
 import { VideoCard } from "./VideoCard";
 
 /**
@@ -239,7 +239,7 @@ export function PacketRunner({ packet, curated }: { packet: LearningPacket; cura
           </div>
         )}
         {packet.stuck?.note && <div className="mb-2 text-[12px] text-faint">{packet.stuck.note}</div>}
-        <TutorBridge nodeId={id} compact />
+        <LiveTutor nodeId={id} />
       </div>
 
       {/* deepen */}

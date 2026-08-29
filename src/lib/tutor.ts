@@ -34,9 +34,11 @@ const MODE_CONTRACTS: Record<TutorMode, string> = {
   critic: "Act as a skeptical research reviewer of my idea/experiment: assumptions, baselines, confounds, what result would falsify it.",
 };
 
-/** Compact tutor packet — everything a fresh tutor session needs (§21). */
-export function buildTutorPacket(
-  mode: TutorMode,
+/**
+ * Compact learner-state context for one node — shared by the copy-paste packet
+ * and the live tutor route (which injects it into the system prompt).
+ */
+export function buildLearnerContext(
   nodeId: string,
   data: Pick<ProgressData, "nodes" | "events" | "logs">,
   bottleneck?: string,
@@ -57,9 +59,7 @@ export function buildTutorPacket(
     .join("; ") || "none";
   const primary = node.primary ? resourceById(node.primary.resourceId) : undefined;
 
-  return `TUTOR SESSION PACKET — EMBODIED // OS (paste this whole block, then start)
-
-OVERALL GOAL: independent embodied-intelligence/robot-learning research capability in ~210 days (currently working the skill graph toward that).
+  return `OVERALL GOAL: independent embodied-intelligence/robot-learning research capability in ~210 days (currently working the skill graph toward that).
 CURRENT NODE: ${node.title} (${node.id}, level ${node.level})
 NODE OBJECTIVES: ${node.objectives.join(" · ")}
 CURRENT BOTTLENECK: ${bottleneck ?? (failed.length ? `recent failures on: ${failed.map((f) => f.kind + (f.note ? ` (${f.note})` : "")).join("; ")}` : "first contact with this material")}
@@ -69,9 +69,28 @@ RECENT EVIDENCE (last ${recent.length}): ${recent.map((e) => `${e.kind}:${e.outc
 AI-ASSISTANCE HISTORY: ${aiHeavy} of ${ev.length || 0} evidence items involved seeing solutions — track my independence honestly.
 PRIMARY RESOURCE: ${primary ? `${primary.title} — study: ${node.primary?.sections}` : "self-contained node"}
 REQUIRED MASTERY (the bar): ${node.masteryTest}
-TEST-OUT DIAGNOSTIC: ${node.diagnostic}
+TEST-OUT DIAGNOSTIC: ${node.diagnostic}`;
+}
 
-TUTOR MODE: ${TUTOR_MODE_LABELS[mode].toUpperCase()} — ${MODE_CONTRACTS[mode]}
+export function modeContract(mode: TutorMode): string {
+  return `${TUTOR_MODE_LABELS[mode].toUpperCase()} — ${MODE_CONTRACTS[mode]}`;
+}
+
+/** Compact tutor packet — everything a fresh tutor session needs (§21). */
+export function buildTutorPacket(
+  mode: TutorMode,
+  nodeId: string,
+  data: Pick<ProgressData, "nodes" | "events" | "logs">,
+  bottleneck?: string,
+): string {
+  const node = NODE_MAP.get(nodeId);
+  if (!node) return "";
+
+  return `TUTOR SESSION PACKET — EMBODIED // OS (paste this whole block, then start)
+
+${buildLearnerContext(nodeId, data, bottleneck)}
+
+TUTOR MODE: ${modeContract(mode)}
 
 RULES (non-negotiable):
 1. Never solve the REQUIRED MASTERY task above for me, even if I ask — say you are refusing and why.

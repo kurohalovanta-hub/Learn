@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-client";
 import { startSync } from "@/lib/sync";
 import { researchModeActive } from "@/lib/engine/scheduler";
 import { dayOfProgram } from "@/lib/engine/pacing";
+import { NODES } from "@/content/nodes";
 import { currentRank } from "@/lib/engine/mastery";
 import { LoginGate } from "./LoginGate";
 import { MasteryMomentHost } from "./MasteryMoment";
@@ -155,18 +156,25 @@ function BootScreen() {
   );
 }
 
+// Capability leads; the calendar is a footnote (it only ever counted against
+// the learner — progress is mastery-gated, never calendar-gated).
 function DayChip() {
   const store = useStore();
   const data = store.exportData();
   const day = dayOfProgram(data.settings);
   const research = researchModeActive(data);
+  const verified = Object.values(store.nodes).filter((p) => p.verified).length;
+  const total = NODES.length;
   return (
-    <span
-      className={`rounded px-1.5 py-0.5 font-mono text-[10.5px] ${
-        research ? "bg-acc-frontier/15 text-acc-frontier" : "bg-acc/10 text-acc"
-      }`}
-    >
-      {research ? "RESEARCH" : day ? `DAY ${Math.min(day, 210)}/210` : "DAY 0"}
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className={`rounded px-1.5 py-0.5 font-mono text-[10.5px] ${
+          research ? "bg-acc-frontier/15 text-acc-frontier" : "bg-acc/10 text-acc"
+        }`}
+      >
+        {research ? "RESEARCH" : `${verified}/${total} VERIFIED`}
+      </span>
+      {!research && day ? <span className="font-mono text-[10px] text-faint">d{Math.min(day, 210)}</span> : null}
     </span>
   );
 }

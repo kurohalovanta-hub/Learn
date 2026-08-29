@@ -13,7 +13,7 @@ import { unlocks } from "@/lib/engine/graph";
 import { fallbackPacket } from "@/lib/packet-fallback";
 import type { LearningPacket } from "@/lib/packet-types";
 import type { Block, Independence, SkillNode } from "@/lib/types";
-import { TutorBridge } from "@/components/TutorBridge";
+import { LiveTutor } from "@/components/tutor/LiveTutor";
 import { Panel } from "@/components/ui";
 
 // ONE objective (HANDOVERFINAL §30): the current bottleneck, its capability
@@ -97,7 +97,7 @@ export default function TodayPage() {
       {/* header — quiet */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="mono-label">
-          day {day ? Math.min(day, 210) : 0}{phase ? ` · ${phase.title.toLowerCase()}` : ""}
+          {phase ? phase.title.toLowerCase() : "getting started"}{day ? ` · d${Math.min(day, 210)}` : ""}
         </div>
         <span className="font-mono text-[11px] text-faint">
           {loggedMin > 0 ? `${(loggedMin / 60).toFixed(1)}h logged` : new Date().toDateString()}
@@ -163,8 +163,8 @@ export default function TodayPage() {
           </div>
 
           <div className="mt-4 border-t border-line/60 pt-3">
-            <div className="mono-label mb-1.5">stuck?</div>
-            <TutorBridge nodeId={bottleneck.id} compact />
+            <div className="mono-label mb-1.5">stuck? ask — the tutor knows exactly where you are</div>
+            <LiveTutor nodeId={bottleneck.id} />
           </div>
 
           {nextUnlock && (
