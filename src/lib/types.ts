@@ -414,6 +414,8 @@ export interface Settings {
   dailyHoursTarget: number;
   gpuTier: "none" | "12" | "16" | "24" | "32+";
   researchModeOverride?: boolean;
+  /** Beginner = calm, guided, minimal surface; Pro = the full toolkit. Default beginner. */
+  experienceMode?: "beginner" | "pro";
   syncSecret?: string;
   updatedAt: number;
 }

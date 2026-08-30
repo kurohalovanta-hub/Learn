@@ -188,25 +188,24 @@ const ICON_FOR: Record<string, string> = {
 };
 const SECTION_NAME: Record<string, string> = { operate: "Your day", build: "Build", research: "Research", system: "System" };
 
-function Wordmark({ className = "" }: { className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <HaloMark size={20} />
-      <span className="text-[15px] font-semibold tracking-[0.12em] text-ink">Halo</span>
-    </span>
-  );
-}
+// Beginner mode shows only the essentials — the fewest doors that still let you
+// start and keep going. Everything else stays one toggle away, not deleted.
+const BEGINNER_HREFS = new Set(["/", "/today", "/tree", "/review", "/guide", "/settings", "/admin"]);
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const isAdmin = useAuth((s) => s.user?.role === "admin");
+  const mode = useStore((s) => s.settings.experienceMode ?? "beginner");
+  const beginner = mode === "beginner";
   return (
     <>
       {NAV_GROUPS.map((g) => {
-        const items = g.items.filter((i) => !i.adminOnly || isAdmin);
+        const items = g.items.filter(
+          (i) => (!i.adminOnly || isAdmin) && (!beginner || BEGINNER_HREFS.has(i.href)),
+        );
         if (!items.length) return null;
         return (
           <div key={g.section}>
-            <div className="mb-1 mt-5 px-2.5 text-[11px] font-medium tracking-wide text-faint first:mt-0">{SECTION_NAME[g.section] ?? g.section}</div>
+            {!beginner && <div className="mb-1 mt-5 px-2.5 text-[11px] font-medium tracking-wide text-faint first:mt-0">{SECTION_NAME[g.section] ?? g.section}</div>}
             {items.map((item) => {
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
@@ -226,7 +225,34 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
           </div>
         );
       })}
+      <ModeToggle beginner={beginner} />
     </>
+  );
+}
+
+function ModeToggle({ beginner }: { beginner: boolean }) {
+  const update = useStore((s) => s.updateSettings);
+  return (
+    <button
+      onClick={() => update({ experienceMode: beginner ? "pro" : "beginner" })}
+      className="mt-5 flex w-full items-center gap-2 rounded-lg border border-line px-2.5 py-2 text-left text-[12px] text-dim transition-colors hover:border-acc/40 hover:text-acc"
+    >
+      <NavIcon name={beginner ? "frontier" : "today"} className="text-faint" />
+      {beginner ? (
+        <span>Show everything <span className="text-faint">· switch to Pro</span></span>
+      ) : (
+        <span>Simplify <span className="text-faint">· back to Beginner</span></span>
+      )}
+    </button>
+  );
+}
+
+function Wordmark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <HaloMark size={20} />
+      <span className="text-[15px] font-semibold tracking-[0.12em] text-ink">Halo</span>
+    </span>
   );
 }
 

@@ -29,6 +29,18 @@ function humanStep(label: string): string {
     .replace("read ", "Read ").replace("watch", "Watch").replace("recall", "Recall").replace("work", "Work");
 }
 
+
+// short, human encouragement — names the payoff, never gamified praise
+function encouragement(loggedMin: number, unlocks?: string): string {
+  if (loggedMin > 0) return "You've already started today. Keep the thread going while it's warm.";
+  const lines = [
+    unlocks ? `Clear this and ${unlocks} opens up. One block is all it takes.` : "Just this one thing today. That's the whole job.",
+    "You don't have to finish it all at once. Start the first step and momentum does the rest.",
+    "Small, honest reps beat a heroic all-nighter. Ten focused minutes still counts.",
+  ];
+  return lines[0];
+}
+
 export default function TodayPage() {
   const store = useStore();
   const data = store.exportData();
@@ -39,6 +51,7 @@ export default function TodayPage() {
   const today = new Date().toISOString().slice(0, 10);
   const todayLogs = data.logs.filter((l) => l.date === today);
   const loggedMin = todayLogs.reduce((s, l) => s + l.minutes, 0);
+  const beginner = (data.settings.experienceMode ?? "beginner") === "beginner";
 
   // the bottleneck: most recently worked incomplete node, else the scheduler's pick
   const bottleneck: SkillNode | null = useMemo(() => {
@@ -133,6 +146,9 @@ export default function TodayPage() {
               </h1>
             </div>
           </div>
+          <p className="mt-3 rounded-lg bg-acc/[0.07] px-3 py-2 text-[12.5px] text-acc-robot">
+            {encouragement(loggedMin, nextUnlock?.title)}
+          </p>
 
           <div className="mt-4">
             <div className="text-[12px] font-medium text-dim">By tonight, you&apos;ll be able to:</div>
@@ -203,7 +219,8 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* secondary — collapsed rows, never competing with the bottleneck */}
+      {/* secondary — hidden in beginner mode to keep the focus on the one thing */}
+      {!beginner && (
       <div className="space-y-2">
         <SecondaryRow
           href="/review"
@@ -230,8 +247,9 @@ export default function TodayPage() {
             />
           ))}
       </div>
+      )}
 
-      <ShipLine />
+      {!beginner && <ShipLine />}
 
       {todayLogs.length > 0 && (
         <div className="space-y-1 px-1">

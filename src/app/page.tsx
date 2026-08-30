@@ -41,6 +41,7 @@ export default function Dashboard() {
     .map((n) => ({ n, unlocks: wouldUnlock(n.id, data.nodes).length }));
 
   const isFresh = stats.focusedHoursTotal === 0 && stats.nodesMastered === 0;
+  const beginner = (data.settings.experienceMode ?? "beginner") === "beginner";
 
   return (
     <div className="space-y-5">
@@ -130,6 +131,10 @@ export default function Dashboard() {
         )}
       </Panel>
 
+      {beginner ? (
+        <p className="px-1 text-[12.5px] text-faint">More views — progress, readiness, papers, the skill graph — appear here when you switch to Pro from the sidebar. For now, keep it simple.</p>
+      ) : (
+        <>
       {/* stats row */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat label="streak" value={`${stats.streakDays}d`} accent="#f2934d" sub="6-day weeks" />
@@ -248,6 +253,8 @@ export default function Dashboard() {
           )}
         </Panel>
       </div>
+        </>
+      )}
     </div>
   );
 }
