@@ -28,7 +28,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-dl", level: 4, title: "Deep Learning Boss", hours: 8,
-    scenario: "Three parts: (1) implement a specified small transformer variant from a blank file; (2) rescue a sabotaged training run (three planted bugs: mask, LR, norm placement) using diagnostics only; (3) oral defense — trace shapes/gradients from memory, then settle one design question (heads vs width) with a 30-minute experiment.",
+    scenario: "Three parts: (1) implement a specified small transformer variant from a blank file; (2) rescue a sabotaged training run (three planted bugs: mask, LR, norm placement) using diagnostics only; (3) oral defense, trace shapes/gradients from memory, then settle one design question (heads vs width) with a 30-minute experiment.",
     passCriteria: ["Variant trains to spec", "All three bugs found via instrumentation (not guessing)", "Defense answers grounded in your own runs"],
     remediation: [
       { weakness: "Attention mechanics", nodeIds: ["l4-attention"] },
@@ -39,7 +39,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-robotics", level: 5, title: "Robotics Boss", hours: 6,
-    scenario: "A NEW Menagerie arm you haven't used: parameterize its screws from the model file, FK matching MuJoCo to 1e-6, your IK benchmark green, then a smooth square-tracing end-effector trajectory — recorded, tests green, your library only.",
+    scenario: "A NEW Menagerie arm you haven't used: parameterize its screws from the model file, FK matching MuJoCo to 1e-6, your IK benchmark green, then a smooth square-tracing end-effector trajectory, recorded, tests green, your library only.",
     passCriteria: ["Oracle deltas within tolerance on the unseen arm", "IK benchmark ≥95%/<1mm/<0.5°", "Square trace video with continuous velocity"],
     remediation: [
       { weakness: "Frame errors", nodeIds: ["l5-frames-rotations"] },
@@ -50,7 +50,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-autonomy", level: 9, title: "Autonomy Boss", hours: 5,
-    scenario: "The Tabletop Butler: on 'clean up', perceive 3 randomized objects by language prompt, plan collision-free motions, grasp and sort into bins, and recover from one induced failure — ≥80% completion over 10 episodes.",
+    scenario: "The Tabletop Butler: on 'clean up', perceive 3 randomized objects by language prompt, plan collision-free motions, grasp and sort into bins, and recover from one induced failure, ≥80% completion over 10 episodes.",
     passCriteria: ["Completion target met with per-stage failure attribution", "Recovery demonstrated on video", "Architecture diagram matches the running system"],
     remediation: [
       { weakness: "Perception misses", nodeIds: ["l8-pose-estimation", "l8-modern-tools"] },
@@ -61,7 +61,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-robot-learning", level: 11, title: "Robot Learning Boss", hours: 10,
-    scenario: "The PushT Study: BC (yours) vs ACT vs Diffusion Policy (yours) on identical data — 3 seeds × 50 episodes each, Wilson CIs, chunk ablation, and a distribution-shift probe. The report is the artifact; defensible conclusions are the pass.",
+    scenario: "The PushT Study: BC (yours) vs ACT vs Diffusion Policy (yours) on identical data, 3 seeds × 50 episodes each, Wilson CIs, chunk ablation, and a distribution-shift probe. The report is the artifact; defensible conclusions are the pass.",
     passCriteria: ["No underpowered claims (CIs throughout)", "Shift probe reveals and explains a real difference", "A reviewer could rerun it from the repo"],
     remediation: [
       { weakness: "Diffusion head shaky", nodeIds: ["l11-diffusion", "l11-diffusion-policy"] },
@@ -72,7 +72,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-vla", level: 12, title: "VLA Boss", hours: 12,
-    scenario: "Fine-tune the frontier lineage (π0-LoRA on 24 GB; SmolVLA + cloud-PEFT path otherwise), run the 400-episode LIBERO protocol plus your perturbation suite, and reproduce one paper-claimed number within pre-registered tolerance — reported like a reproduction study.",
+    scenario: "Fine-tune the frontier lineage (π0-LoRA on 24 GB; SmolVLA + cloud-PEFT path otherwise), run the 400-episode LIBERO protocol plus your perturbation suite, and reproduce one paper-claimed number within pre-registered tolerance, reported like a reproduction study.",
     passCriteria: ["Fine-tune completes with tracked config", "Protocol + perturbation results with CIs", "Deviation log + failure gallery; the report survives a lab-meeting grilling"],
     remediation: [
       { weakness: "Architecture gaps", nodeIds: ["l12-vla-anatomy", "l12-pi0-flow"] },
@@ -83,7 +83,7 @@ export const BOSSES: Boss[] = [
   },
   {
     id: "boss-final", level: 16, title: "Final Boss: The Research Defense", hours: 14,
-    scenario: "15-minute presentation of your original research + 45 minutes of adversarial cross-examination (AI-as-committee + any recruitable human) covering method, statistics, alternatives, and significance — then the written next-experiments memo.",
+    scenario: "15-minute presentation of your original research + 45 minutes of adversarial cross-examination (AI-as-committee + any recruitable human) covering method, statistics, alternatives, and significance, then the written next-experiments memo.",
     passCriteria: ["Every claim defended or honestly conceded", "Statistics survive scrutiny", "A credible research agenda exits the room"],
     remediation: [
       { weakness: "Method holes", nodeIds: ["l15-experiment-design", "l16-proposal"] },

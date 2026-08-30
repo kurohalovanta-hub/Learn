@@ -2,7 +2,7 @@ import type { Paper } from "@/lib/types";
 
 // The 62-paper ladder (docs/research/05-paper-ladder.md). Ordered by reading order.
 export const PAPERS: Paper[] = [
-  // ── Rung 1 — NN & vision foundations (L3–L4) ─────────────────────
+  // ── Rung 1, NN & vision foundations (L3–L4) ─────────────────────
   {
     id: "paper-alexnet", order: 1, rung: 1, title: "ImageNet Classification with Deep CNNs (AlexNet)", authors: "Krizhevsky, Sutskever, Hinton", year: 2012, venue: "NeurIPS", area: "foundations",
     url: "https://proceedings.neurips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html", verdict: "SKIM", difficulty: 2,
@@ -20,9 +20,9 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-batchnorm", order: 3, rung: 1, title: "Batch Normalization", authors: "Ioffe, Szegedy", year: 2015, area: "foundations",
     url: "https://arxiv.org/abs/1502.03167", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "The normalization that made deep nets trainable — read after Karpathy v4's diagnostics.",
+    whyItMatters: "The normalization that made deep nets trainable, read after Karpathy v4's diagnostics.",
     prereqNodeIds: ["l4-training-dynamics"], keyIdeas: ["Normalize activations per batch", "Train/eval mode duality"],
-    questions: ["What goes wrong at batch size 1 — and which robot-learning setting hits that?"],
+    questions: ["What goes wrong at batch size 1, and which robot-learning setting hits that?"],
   },
   {
     id: "paper-resnet", order: 4, rung: 1, title: "Deep Residual Learning (ResNet)", authors: "He, Zhang, Ren, Sun", year: 2015, venue: "CVPR 2016", area: "foundations",
@@ -42,7 +42,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-attention", order: 6, rung: 1, title: "Attention Is All You Need", authors: "Vaswani et al.", year: 2017, venue: "NeurIPS", area: "foundations",
     url: "https://arxiv.org/abs/1706.03762", verdict: "READ", spine: true, difficulty: 4,
-    whyItMatters: "The architecture of the decade — read twice, after building your own GPT.",
+    whyItMatters: "The architecture of the decade, read twice, after building your own GPT.",
     prereqNodeIds: ["l4-transformer"], keyIdeas: ["Scaled dot-product attention", "Multi-head subspaces", "Positional encodings"],
     keyEquations: ["\\operatorname{Attn}(Q,K,V)=\\operatorname{softmax}(QK^{\\top}/\\sqrt{d_k})V"],
     questions: ["Which parts survived to 2026 unchanged, and which were replaced (encoder-decoder? sinusoids?)"],
@@ -50,30 +50,30 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-gpt2", order: 7, rung: 1, title: "Language Models are Unsupervised Multitask Learners (GPT-2)", authors: "Radford et al.", year: 2019, area: "foundations",
     url: "https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "Scale + next-token prediction = general capability — the bet the whole field then took.",
+    whyItMatters: "Scale + next-token prediction = general capability, the bet the whole field then took.",
     prereqNodeIds: ["l4-transformer"], keyIdeas: ["Zero-shot task transfer from pretraining"],
     questions: ["What does this paper predict about robot foundation models?"],
   },
   {
     id: "paper-rope", order: 8, rung: 1, title: "RoFormer: Rotary Position Embedding", authors: "Su et al.", year: 2021, area: "foundations",
     url: "https://arxiv.org/abs/2104.09864", verdict: "READ", difficulty: 4,
-    whyItMatters: "The 2026 default positional scheme — §3 is the payload.",
+    whyItMatters: "The 2026 default positional scheme, §3 is the payload.",
     prereqNodeIds: ["l4-rope-tokenization"], keyIdeas: ["Rotate Q/K pairs by position", "Relative offsets emerge in the dot product"],
     questions: ["Show that q_m·k_n depends only on m−n under RoPE."],
   },
   {
     id: "paper-vit", order: 9, rung: 1, title: "An Image is Worth 16x16 Words (ViT)", authors: "Dosovitskiy et al.", year: 2020, venue: "ICLR 2021", area: "vision",
     url: "https://arxiv.org/abs/2010.11929", verdict: "READ", spine: true, difficulty: 3,
-    whyItMatters: "Patches-as-tokens unified vision with language — the precondition for VLAs.",
+    whyItMatters: "Patches-as-tokens unified vision with language, the precondition for VLAs.",
     prereqNodeIds: ["l4-vit"], keyIdeas: ["Images as token sequences", "Scale beats inductive bias"],
-    questions: ["Why do ViTs need more data than CNNs — and what changed that (pretraining)?"],
+    questions: ["Why do ViTs need more data than CNNs, and what changed that (pretraining)?"],
   },
   {
     id: "paper-clip", order: 10, rung: 1, title: "Learning Transferable Visual Models From Natural Language Supervision (CLIP)", authors: "Radford et al.", year: 2021, area: "vision",
     url: "https://arxiv.org/abs/2103.00020", verdict: "READ", spine: true, difficulty: 3,
-    whyItMatters: "Vision and language in one embedding space — the semantic substrate of every VLA.",
+    whyItMatters: "Vision and language in one embedding space, the semantic substrate of every VLA.",
     prereqNodeIds: ["l4-clip-contrastive"], keyIdeas: ["Contrastive pairs at web scale", "Zero-shot via prompts"],
-    questions: ["What does CLIP NOT learn (spatial precision, counting) — and why does that matter for robots?"],
+    questions: ["What does CLIP NOT learn (spatial precision, counting), and why does that matter for robots?"],
   },
   {
     id: "paper-mae", order: 11, rung: 1, title: "Masked Autoencoders Are Scalable Vision Learners", authors: "He et al.", year: 2021, area: "vision",
@@ -92,7 +92,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-dinov2", order: 13, rung: 1, title: "DINOv2: Learning Robust Visual Features without Supervision", authors: "Oquab et al.", year: 2023, area: "vision",
     url: "https://arxiv.org/abs/2304.07193", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "Self-distilled dense features — the eyes of DINO-WM and many robot stacks.",
+    whyItMatters: "Self-distilled dense features, the eyes of DINO-WM and many robot stacks.",
     prereqNodeIds: ["l8-repr-learning"], keyIdeas: ["Self-distillation without labels", "Dense features for free"],
     questions: ["Why do DINO patch features segment objects without segmentation training?"],
   },
@@ -103,7 +103,7 @@ export const PAPERS: Paper[] = [
     prereqNodeIds: ["l8-repr-learning"], keyIdeas: ["Scaled self-supervised vision", "Frozen-features-first workflow"],
     questions: ["What would make you fine-tune it vs freeze it for a robot task?"],
   },
-  // ── Rung 2 — RL (L10) ────────────────────────────────────────────
+  // ── Rung 2, RL (L10) ────────────────────────────────────────────
   {
     id: "paper-gae", order: 15, rung: 2, title: "High-Dimensional Continuous Control Using GAE", authors: "Schulman et al.", year: 2015, area: "rl",
     url: "https://arxiv.org/abs/1506.02438", verdict: "SKIM", difficulty: 4,
@@ -115,7 +115,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-ppo", order: 16, rung: 2, title: "Proximal Policy Optimization Algorithms", authors: "Schulman et al.", year: 2017, area: "rl",
     url: "https://arxiv.org/abs/1707.06347", verdict: "READ", spine: true, difficulty: 3,
-    whyItMatters: "The workhorse of robot RL and VLA fine-tuning alike — and you implement it from scratch.",
+    whyItMatters: "The workhorse of robot RL and VLA fine-tuning alike, and you implement it from scratch.",
     prereqNodeIds: ["l10-ppo"], keyIdeas: ["Clipped surrogate objective", "Multiple epochs per batch safely"],
     keyEquations: ["L^{CLIP}=\\mathbb{E}[\\min(rA,\\operatorname{clip}(r,1\\pm\\epsilon)A)]"],
     questions: ["Why does clipping approximate a trust region? What does the paper NOT tell you that the 37-details blog does?"],
@@ -124,7 +124,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-sac", order: 17, rung: 2, title: "Soft Actor-Critic", authors: "Haarnoja et al.", year: 2018, area: "rl",
     url: "https://arxiv.org/abs/1801.01290", verdict: "READ", difficulty: 4,
-    whyItMatters: "Max-entropy off-policy RL — the engine of real-robot RL (HIL-SERL) and your second from-scratch algorithm.",
+    whyItMatters: "Max-entropy off-policy RL, the engine of real-robot RL (HIL-SERL) and your second from-scratch algorithm.",
     prereqNodeIds: ["l10-sac"], keyIdeas: ["Entropy-regularized objective", "Twin critics, auto temperature"],
     questions: ["Why does entropy regularization help exploration AND robustness?"],
     reproduction: { feasibility: "full", plan: "From-scratch SAC on HalfCheetah (l10-sac).", compute: "any GPU" },
@@ -132,7 +132,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-rudin", order: 18, rung: 2, title: "Learning to Walk in Minutes Using Massively Parallel Deep RL", authors: "Rudin et al.", year: 2021, venue: "CoRL", area: "rl",
     url: "https://arxiv.org/abs/2109.11978", verdict: "READ", difficulty: 3,
-    whyItMatters: "Created the massively-parallel recipe that MuJoCo Playground/Isaac Lab industrialized — the reason a Go1 walks in 7 minutes on your GPU.",
+    whyItMatters: "Created the massively-parallel recipe that MuJoCo Playground/Isaac Lab industrialized, the reason a Go1 walks in 7 minutes on your GPU.",
     prereqNodeIds: ["l10-parallel-rl"], keyIdeas: ["Thousands of envs on one GPU", "Curriculum + DR at scale"],
     questions: ["Which design choices survive into Playground's configs you inspected?"],
     reproduction: { feasibility: "component", plan: "Playground Go1 locomotion notebook = the living reproduction.", compute: "RTX 4090: ~7 min (documented)" },
@@ -147,7 +147,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-iql", order: 20, rung: 2, title: "Offline RL with Implicit Q-Learning (IQL)", authors: "Kostrikov, Nair, Levine", year: 2021, area: "rl",
     url: "https://arxiv.org/abs/2110.06169", verdict: "READ", difficulty: 4,
-    whyItMatters: "The offline-RL algorithm that survived into VLA-land — expectile values + advantage-weighted extraction is RECAP's ancestor.",
+    whyItMatters: "The offline-RL algorithm that survived into VLA-land, expectile values + advantage-weighted extraction is RECAP's ancestor.",
     prereqNodeIds: ["l10-offline-iql"], keyIdeas: ["Never query OOD actions", "Expectile regression as implicit max"],
     questions: ["Trace the line from IQL's advantage weighting to π*0.6's advantage conditioning."],
     reproduction: { feasibility: "component", plan: "The two losses on your toy dataset (l10-offline-iql).", compute: "trivial" },
@@ -159,11 +159,11 @@ export const PAPERS: Paper[] = [
     prereqNodeIds: ["l10-parallel-rl"], keyIdeas: ["Where RL won (locomotion) vs stalled (manipulation)"],
     questions: ["Why did legged locomotion fall to RL years before manipulation?"],
   },
-  // ── Rung 3 — IL & action generation (L11) ────────────────────────
+  // ── Rung 3, IL & action generation (L11) ────────────────────────
   {
     id: "paper-dagger", order: 22, rung: 3, title: "A Reduction of Imitation Learning to No-Regret Online Learning (DAgger)", authors: "Ross, Gordon, Bagnell", year: 2011, venue: "AISTATS", area: "imitation",
     url: "https://arxiv.org/abs/1011.0686", verdict: "READ", difficulty: 3,
-    whyItMatters: "Covariate shift — imitation's original sin — named, bounded, and fixed. Short and foundational.",
+    whyItMatters: "Covariate shift, imitation's original sin, named, bounded, and fixed. Short and foundational.",
     prereqNodeIds: ["l11-bc-dagger"], keyIdeas: ["Compounding errors O(εT²) vs O(εT)", "Query the expert on YOUR states"],
     questions: ["Why does LeRobot's rollout 'dagger' mode implement exactly this?"],
     reproduction: { feasibility: "full", plan: "CS285 HW1 (done in l11-bc-dagger).", compute: "trivial" },
@@ -171,7 +171,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-ddpm", order: 23, rung: 3, title: "Denoising Diffusion Probabilistic Models", authors: "Ho, Jain, Abbeel", year: 2020, area: "imitation",
     url: "https://arxiv.org/abs/2006.11239", verdict: "READ", difficulty: 4,
-    whyItMatters: "The generative engine under Diffusion Policy — prerequisite math for half of modern action generation.",
+    whyItMatters: "The generative engine under Diffusion Policy, prerequisite math for half of modern action generation.",
     prereqNodeIds: ["l11-diffusion"], keyIdeas: ["Forward noising, learned reverse", "Predict-ε objective"],
     keyEquations: ["L=\\mathbb{E}\\|\\epsilon-\\epsilon_\\theta(x_t,t)\\|^2"],
     questions: ["Why is predicting ε easier than predicting x₀?"],
@@ -180,7 +180,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-act", order: 24, rung: 3, title: "Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware (ALOHA/ACT)", authors: "Zhao, Kumar, Levine, Finn", year: 2023, venue: "RSS", area: "imitation",
     url: "https://arxiv.org/abs/2304.13705", verdict: "READ+RUN", spine: true, difficulty: 4,
-    whyItMatters: "Action chunking + CVAE — the 'predict sequences, not steps' move every VLA inherited; plus the cheap-hardware ethos.",
+    whyItMatters: "Action chunking + CVAE, the 'predict sequences, not steps' move every VLA inherited; plus the cheap-hardware ethos.",
     prereqNodeIds: ["l11-act"], keyIdeas: ["k-step action chunks", "CVAE over demonstration style", "Temporal ensembling"],
     questions: ["What failure of step-wise BC does chunking attack? What does the latent z absorb?"],
     reproduction: { feasibility: "full", plan: "LeRobot ACT on gym-aloha TransferCube + chunk ablation (l11-act).", compute: "8–12 GB, hours" },
@@ -188,7 +188,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-diffusion-policy", order: 25, rung: 3, title: "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion", authors: "Chi et al.", year: 2023, venue: "RSS", area: "imitation",
     url: "https://arxiv.org/abs/2303.04137", verdict: "READ+RUN", spine: true, difficulty: 4,
-    whyItMatters: "Multimodal action distributions handled by construction — the verified 'first policy class to implement from scratch'.",
+    whyItMatters: "Multimodal action distributions handled by construction, the verified 'first policy class to implement from scratch'.",
     prereqNodeIds: ["l11-diffusion-policy"], keyIdeas: ["Diffusion over action chunks", "Receding-horizon execution"],
     questions: ["Why does mean-regression BC average into the wall while DP commits to a mode?"],
     reproduction: { feasibility: "full", plan: "From-scratch DP on PushT vs LeRobot reference (l11-diffusion-policy).", compute: "8 GB, 1–4 h" },
@@ -196,7 +196,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-flow-matching", order: 26, rung: 3, title: "Flow Matching for Generative Modeling", authors: "Lipman et al.", year: 2022, venue: "ICLR 2023", area: "imitation",
     url: "https://arxiv.org/abs/2210.02747", verdict: "READ", difficulty: 4,
-    whyItMatters: "The objective inside π0/GR00T action experts — read the core, then make the ~50-line conversion yourself.",
+    whyItMatters: "The objective inside π0/GR00T action experts, read the core, then make the ~50-line conversion yourself.",
     prereqNodeIds: ["l11-flow-matching"], keyIdeas: ["Regress velocity along interpolants", "Few-step ODE sampling"],
     keyEquations: ["L=\\mathbb{E}\\|v_\\theta(x_t,t)-(x_1-x_0)\\|^2"],
     questions: ["Why straight-line paths? What breaks at 1-step inference?"],
@@ -212,30 +212,30 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-mimicgen", order: 28, rung: 3, title: "MimicGen: Scalable Data Generation from Few Demonstrations", authors: "Mandlekar et al.", year: 2023, venue: "CoRL", area: "imitation",
     url: "https://arxiv.org/abs/2310.17596", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "The geometric-replay family of synthetic data: 10 demos → 1000s, cheap — contrast with DreamGen's generative family.",
+    whyItMatters: "The geometric-replay family of synthetic data: 10 demos → 1000s, cheap, contrast with DreamGen's generative family.",
     prereqNodeIds: ["l11-data-quality"], keyIdeas: ["Segment-transform-replay across scene variations"],
     questions: ["Where does replay-based generation fail (contact-rich, deformables)?"],
   },
   {
     id: "paper-lie", order: 29, rung: 3, title: "A micro Lie theory for state estimation in robotics", authors: "Solà, Deray, Atchuthan", year: 2018, area: "robotics",
     url: "https://arxiv.org/abs/1812.01537", verdict: "READ", difficulty: 4,
-    whyItMatters: "The pose-math formalism of modern robotics papers — its appendix tables are a permanent reference.",
+    whyItMatters: "The pose-math formalism of modern robotics papers, its appendix tables are a permanent reference.",
     prereqNodeIds: ["l5-lie-se3"], keyIdeas: ["exp/log, ⊞/⊟, Jacobians on manifolds"],
     questions: ["Why optimize in the tangent space rather than on rotation matrices?"],
     reproduction: { feasibility: "full", plan: "Your se3.py property suite (l5-lie-se3).", compute: "none" },
   },
-  // ── Rung 4 — Generalist policies & VLA (L12) ─────────────────────
+  // ── Rung 4, Generalist policies & VLA (L12) ─────────────────────
   {
     id: "paper-rt1", order: 30, rung: 4, title: "RT-1: Robotics Transformer for Real-World Control at Scale", authors: "Brohan et al. (Google)", year: 2022, area: "vla",
     url: "https://arxiv.org/abs/2212.06817", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "The first robot transformer at fleet scale — historical context in 30 minutes.",
+    whyItMatters: "The first robot transformer at fleet scale, historical context in 30 minutes.",
     prereqNodeIds: ["l12-rt-lineage"], keyIdeas: ["Multi-task tokenized control at 700+ tasks"],
     questions: ["What did RT-1 prove that made RT-2's bet plausible?"],
   },
   {
     id: "paper-rt2", order: 31, rung: 4, title: "RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control", authors: "Brohan et al. (Google DeepMind)", year: 2023, area: "vla",
     url: "https://arxiv.org/abs/2307.15818", verdict: "READ", spine: true, difficulty: 4,
-    whyItMatters: "SPINE #1 — the founding idea: a VLM whose output tokens ARE motor commands; web knowledge reaches the gripper.",
+    whyItMatters: "SPINE #1, the founding idea: a VLM whose output tokens ARE motor commands; web knowledge reaches the gripper.",
     prereqNodeIds: ["l12-rt-lineage"], keyIdeas: ["Actions as text tokens", "Co-fine-tuning web + robot data", "Emergent semantic transfer"],
     questions: ["What three evidences show web-knowledge transfer? What costs did tokenized actions impose (rate, fidelity)?"],
   },
@@ -249,14 +249,14 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-octo", order: 33, rung: 4, title: "Octo: An Open-Source Generalist Robot Policy", authors: "Octo Team (Berkeley et al.)", year: 2024, venue: "RSS", area: "vla",
     url: "https://arxiv.org/abs/2405.12213", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "The open generalist before VLAs proper — diffusion head + flexible tokenization on OXE.",
+    whyItMatters: "The open generalist before VLAs proper, diffusion head + flexible tokenization on OXE.",
     prereqNodeIds: ["l12-vla-anatomy"], keyIdeas: ["Transformer + diffusion head on OXE"],
     questions: ["What did OpenVLA change vs Octo, and why did it win mindshare?"],
   },
   {
     id: "paper-openvla", order: 34, rung: 4, title: "OpenVLA: An Open-Source Vision-Language-Action Model", authors: "Kim, Pertsch, Karamcheti et al.", year: 2024, area: "vla",
     url: "https://arxiv.org/abs/2406.09246", codeUrl: "https://github.com/openvla/openvla", verdict: "READ", spine: true, difficulty: 4,
-    whyItMatters: "SPINE #2 — the open replication you can READ end-to-end: 7B, DINOv2+SigLIP→Llama-2, 970k OXE trajectories.",
+    whyItMatters: "SPINE #2, the open replication you can READ end-to-end: 7B, DINOv2+SigLIP→Llama-2, 970k OXE trajectories.",
     prereqNodeIds: ["l12-openvla-code"], keyIdeas: ["Open VLA recipe + ablations", "256-bin action discretization"],
     questions: ["Which ablation surprised you most? Where exactly does vision enter the LLM (in the code)?"],
     reproduction: { feasibility: "eval-only", plan: "Code-read + released-checkpoint eval; fine-tuning superseded (27 GB floor).", compute: "16 GB inference" },
@@ -271,7 +271,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-pi0", order: 36, rung: 4, title: "π0: A Vision-Language-Action Flow Model for General Robot Control", authors: "Black et al. (Physical Intelligence)", year: 2024, area: "vla",
     url: "https://arxiv.org/abs/2410.24164", codeUrl: "https://github.com/Physical-Intelligence/openpi", verdict: "READ", spine: true, difficulty: 5,
-    whyItMatters: "SPINE #3a — the flow-matching action expert on a VLM: the architecture the field converged toward.",
+    whyItMatters: "SPINE #3a, the flow-matching action expert on a VLM: the architecture the field converged toward.",
     prereqNodeIds: ["l12-pi0-flow"], keyIdeas: ["PaliGemma + action expert", "Flow over 50-step chunks", "Cross-embodiment pretraining"],
     questions: ["Why a separate action expert instead of action tokens in the VLM? Diff π0 against your own PushT flow policy."],
     reproduction: { feasibility: "component", plan: "openpi LoRA fine-tune (VLA Boss).", compute: ">22.5 GB documented (RTX 4090-class)" },
@@ -279,7 +279,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-fast", order: 37, rung: 4, title: "FAST: Efficient Action Tokenization for VLA Models", authors: "Pertsch et al. (Physical Intelligence)", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2501.09747", verdict: "READ", spine: true, difficulty: 4,
-    whyItMatters: "SPINE #3b — the discrete counterpoint: DCT+BPE action tokens make autoregressive VLAs 5× cheaper at π0-level quality.",
+    whyItMatters: "SPINE #3b, the discrete counterpoint: DCT+BPE action tokens make autoregressive VLAs 5× cheaper at π0-level quality.",
     prereqNodeIds: ["l12-action-tokenization"], keyIdeas: ["DCT exposes structure, BPE compresses it", "When tokens beat flow"],
     questions: ["Why cosine-transform before BPE? Reproduce the compression ratio on your own action data (mini-FAST)."],
     reproduction: { feasibility: "component", plan: "Your mini-FAST (l12-action-tokenization).", compute: "trivial" },
@@ -287,7 +287,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-pi05", order: 38, rung: 4, title: "π0.5: A VLA Model with Open-World Generalization", authors: "Physical Intelligence", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2504.16054", codeUrl: "https://github.com/Physical-Intelligence/openpi", verdict: "READ", spine: true, difficulty: 5,
-    whyItMatters: "SPINE #4 — the recipe paper: heterogeneous co-training + hierarchy → cleaning unseen kitchens. The capstone fine-tune's paper.",
+    whyItMatters: "SPINE #4, the recipe paper: heterogeneous co-training + hierarchy → cleaning unseen kitchens. The capstone fine-tune's paper.",
     prereqNodeIds: ["l12-pi0-flow"], keyIdeas: ["Data-mixture breadth beats robot-data volume", "High-level/low-level inference", "Knowledge insulation"],
     questions: ["Reconstruct the training-mixture diagram from memory. Which ablation supports the breadth claim?"],
     reproduction: { feasibility: "component", plan: "π0.5-LIBERO via openpi/LeRobot-PEFT (VLA Boss path).", compute: "24 GB local or one cloud A100" },
@@ -295,7 +295,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-smolvla", order: 39, rung: 4, title: "SmolVLA: Small, Efficient VLA Trained on Community Data", authors: "Shukor et al. (Hugging Face)", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2506.01844", codeUrl: "https://github.com/huggingface/lerobot", verdict: "READ+RUN", difficulty: 3,
-    whyItMatters: "The VLA you train YOURSELF (450M, consumer GPU) — and a readable codebase sized for one human to fully understand.",
+    whyItMatters: "The VLA you train YOURSELF (450M, consumer GPU), and a readable codebase sized for one human to fully understand.",
     prereqNodeIds: ["l12-smolvla-finetune"], keyIdeas: ["Compact VLM + flow expert", "Async inference", "Community-data training"],
     questions: ["What did they cut from π0-scale designs, and what survived? What did your own fine-tune show pretraining bought?"],
     reproduction: { feasibility: "full", plan: "Fine-tune + CI'd eval (l12-smolvla-finetune).", compute: "16 GB comfortable; 12 GB reduced-batch" },
@@ -303,7 +303,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-groot", order: 40, rung: 4, title: "GR00T N1: An Open Foundation Model for Generalist Humanoid Robots", authors: "NVIDIA GEAR", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2503.14734", codeUrl: "https://github.com/NVIDIA/Isaac-GR00T", verdict: "SKIM", difficulty: 4,
-    whyItMatters: "Dual-system architecture + the data pyramid (real/synthetic/web) — the open humanoid stack (N1.7 current).",
+    whyItMatters: "Dual-system architecture + the data pyramid (real/synthetic/web), the open humanoid stack (N1.7 current).",
     prereqNodeIds: ["l12-cross-embodiment"], keyIdeas: ["System1/System2", "DreamGen synthetic-data flywheel"],
     questions: ["What does the slow system give the fast system, concretely?"],
   },
@@ -317,14 +317,14 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-recap", order: 42, rung: 4, title: "π*0.6: Learning from Experience (RECAP)", authors: "Physical Intelligence", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2511.14759", verdict: "READ", spine: true, difficulty: 5,
-    whyItMatters: "SPINE #5 — beyond imitation: value functions from mixed experience, advantage-conditioned policies, robots improving on the job.",
+    whyItMatters: "SPINE #5, beyond imitation: value functions from mixed experience, advantage-conditioned policies, robots improving on the job.",
     prereqNodeIds: ["l12-rl-vla"], keyIdeas: ["Demos + corrections + autonomous experience", "Advantage conditioning (the IQL through-line)"],
     questions: ["Why advantage-conditioning instead of policy-gradient fine-tuning? Trace every component to something you implemented."],
   },
   {
     id: "paper-vla-survey", order: 43, rung: 4, title: "A Survey on VLA Models: An Action Tokenization Perspective", authors: "Zhong et al.", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2507.01925", verdict: "READ", difficulty: 3,
-    whyItMatters: "The best pedagogical map — organizes every VLA by what its 'action token' is. Read EARLY in the VLA block.",
+    whyItMatters: "The best pedagogical map, organizes every VLA by what its 'action token' is. Read EARLY in the VLA block.",
     prereqNodeIds: ["l12-vla-anatomy"], keyIdeas: ["Action-token taxonomy: language plan/trajectory/latent/raw"],
     questions: ["Place π0, OpenVLA, UniVLA, RT-2 in the taxonomy from memory."],
   },
@@ -338,7 +338,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-pi07", order: 45, rung: 4, title: "π0.7: Steerable Generalist Policies", authors: "Physical Intelligence", year: 2026, area: "vla",
     url: "https://arxiv.org/abs/2604.15483", verdict: "SKIM", difficulty: 5,
-    whyItMatters: "The Apr-2026 frontier: multimodal prompting (language/metadata/visual subgoals), emergent skill recombination. Closed — read for direction.",
+    whyItMatters: "The Apr-2026 frontier: multimodal prompting (language/metadata/visual subgoals), emergent skill recombination. Closed, read for direction.",
     prereqNodeIds: ["l12-rl-vla"], keyIdeas: ["Steerability as a training-time property"],
     questions: ["What here could you test at SmolVLA scale?"],
   },
@@ -347,7 +347,7 @@ export const PAPERS: Paper[] = [
     url: "https://arxiv.org/abs/2509.09674", codeUrl: "https://github.com/PRIME-RL/SimpleVLA-RL", verdict: "READ", difficulty: 4,
     whyItMatters: "The canonical open VLA-RL teaching paper: sparse success rewards + GRPO-style updates; 1-demo cold start 17→92 on LIBERO-Long.",
     prereqNodeIds: ["l12-rl-vla"], keyIdeas: ["RL post-training at benchmark scale", "Data efficiency from exploration"],
-    questions: ["Code-walk: where do rollouts, rewards, and updates live? Why 8×A800 — what exactly is expensive?"],
+    questions: ["Code-walk: where do rollouts, rewards, and updates live? Why 8×A800, what exactly is expensive?"],
     reproduction: { feasibility: "none", plan: "Code-walk + released-checkpoint eval only (8×A800 documented).", compute: "cluster-only training" },
   },
   {
@@ -360,11 +360,11 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-pirl", order: 48, rung: 4, title: "πRL: Online RL for Flow-Based VLAs", authors: "RLinf team", year: 2025, area: "vla",
     url: "https://arxiv.org/abs/2510.25889", verdict: "SKIM", difficulty: 5,
-    whyItMatters: "How RL gradients pass through a flow action expert (two-layer MDP: Flow-Noise/Flow-SDE) — the best pedagogy on RL-through-generative-heads.",
+    whyItMatters: "How RL gradients pass through a flow action expert (two-layer MDP: Flow-Noise/Flow-SDE), the best pedagogy on RL-through-generative-heads.",
     prereqNodeIds: ["l12-rl-vla"], keyIdeas: ["The flow head as an inner MDP"],
     questions: ["Why can't you backprop a success reward through ODE sampling naively?"],
   },
-  // ── Rung 5 — World models (L13) ──────────────────────────────────
+  // ── Rung 5, World models (L13) ──────────────────────────────────
   {
     id: "paper-worldmodels", order: 49, rung: 5, title: "World Models", authors: "Ha, Schmidhuber", year: 2018, area: "world-models",
     url: "https://arxiv.org/abs/1803.10122", verdict: "READ", difficulty: 3,
@@ -375,14 +375,14 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-planet", order: 50, rung: 5, title: "Learning Latent Dynamics for Planning from Pixels (PlaNet)", authors: "Hafner et al.", year: 2019, area: "world-models",
     url: "https://arxiv.org/abs/1811.04551", verdict: "SKIM", difficulty: 4,
-    whyItMatters: "The RSSM's birthplace — read as DreamerV3's appendix-ancestor (don't run the TF1 code).",
+    whyItMatters: "The RSSM's birthplace, read as DreamerV3's appendix-ancestor (don't run the TF1 code).",
     prereqNodeIds: ["l13-dreamer"], keyIdeas: ["Deterministic+stochastic latent path", "Planning via CEM in latent"],
     questions: ["Why both latent paths?"],
   },
   {
     id: "paper-dreamerv3", order: 51, rung: 5, title: "DreamerV3: Mastering Diverse Domains through World Models", authors: "Hafner et al.", year: 2023, venue: "Nature 2025", area: "world-models",
     url: "https://arxiv.org/abs/2301.04104", codeUrl: "https://github.com/danijar/dreamerv3", verdict: "READ+RUN", spine: true, difficulty: 5,
-    whyItMatters: "WM SPINE — imagination training that works with ONE config across 150+ tasks; Nature-blessed; single-GPU runnable.",
+    whyItMatters: "WM SPINE, imagination training that works with ONE config across 150+ tasks; Nature-blessed; single-GPU runnable.",
     prereqNodeIds: ["l13-dreamer"], keyIdeas: ["RSSM + imagined actor-critic", "symlog/two-hot robustness tricks"],
     questions: ["Which robustness trick matters most (their ablations)? Where does model error become policy error?"],
     reproduction: { feasibility: "component", plan: "Official repo on one DMC task (l13-dreamer).", compute: "12–24 GB, hours" },
@@ -390,7 +390,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-tdmpc2", order: 52, rung: 5, title: "TD-MPC2: Scalable, Robust World Models for Continuous Control", authors: "Hansen, Su, Wang", year: 2023, venue: "ICLR 2024", area: "world-models",
     url: "https://arxiv.org/abs/2310.16828", codeUrl: "https://github.com/nicklashansen/tdmpc2", verdict: "READ+RUN", spine: true, difficulty: 4,
-    whyItMatters: "The decoder-free counterpoint: no reconstruction, plan through the latent with MPC — your L6 MPC completing its arc.",
+    whyItMatters: "The decoder-free counterpoint: no reconstruction, plan through the latent with MPC, your L6 MPC completing its arc.",
     prereqNodeIds: ["l13-tdmpc"], keyIdeas: ["Implicit world model", "MPPI + value terminal", "104 tasks, one config"],
     questions: ["What does never-reconstructing buy and cost? Reproduce a reference curve."],
     reproduction: { feasibility: "full", plan: "walker-walk reproduction + ablations (l13-tdmpc).", compute: "12 GB documented" },
@@ -398,7 +398,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-genie", order: 53, rung: 5, title: "Genie: Generative Interactive Environments", authors: "Bruce et al. (DeepMind)", year: 2024, venue: "ICML", area: "world-models",
     url: "https://arxiv.org/abs/2402.15391", verdict: "READ", difficulty: 4,
-    whyItMatters: "Latent actions from action-FREE video — the mechanism under Genie 3, LAPA, UniVLA, and the human-video route around the robot-data bottleneck.",
+    whyItMatters: "Latent actions from action-FREE video, the mechanism under Genie 3, LAPA, UniVLA, and the human-video route around the robot-data bottleneck.",
     prereqNodeIds: ["l13-latent-actions"], keyIdeas: ["VQ latent-action model", "Playable worlds from video"],
     questions: ["Why do the discovered latents correspond to controllable actions at all?"],
   },
@@ -421,7 +421,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-dreamer4", order: 56, rung: 5, title: "Dreamer 4: Training Agents Inside of Scalable World Models", authors: "Hafner, Yan, Lillicrap", year: 2025, area: "world-models",
     url: "https://arxiv.org/abs/2509.24527", verdict: "READ", spine: true, difficulty: 5,
-    whyItMatters: "The frontier synthesis: shortcut-forced diffusion dynamics + tokenizer, Minecraft diamonds from OFFLINE data — and no official code (community repos are load-bearing).",
+    whyItMatters: "The frontier synthesis: shortcut-forced diffusion dynamics + tokenizer, Minecraft diamonds from OFFLINE data, and no official code (community repos are load-bearing).",
     prereqNodeIds: ["l13-dreamer"], keyIdeas: ["Scalable interactive diffusion WM", "Offline imagination RL"],
     questions: ["What does shortcut forcing solve? Why is offline-only such a big deal?"],
   },
@@ -449,11 +449,11 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-wam-debate", order: 60, rung: 5, title: "Do World Action Models Generalize Better than VLAs?", authors: "(2026)", year: 2026, area: "world-models",
     url: "https://arxiv.org/abs/2603.22078", verdict: "SKIM", difficulty: 4,
-    whyItMatters: "The open paradigm question, posed empirically — the debate your Month-7 direction may live inside.",
+    whyItMatters: "The open paradigm question, posed empirically, the debate your Month-7 direction may live inside.",
     prereqNodeIds: ["l13-video-wm"], keyIdeas: ["Generalization comparison under matched data"],
     questions: ["What would a decisive experiment look like at YOUR compute scale?"],
   },
-  // ── Rung 6 — Sim-to-real & evaluation (L14–L15) ──────────────────
+  // ── Rung 6, Sim-to-real & evaluation (L14–L15) ──────────────────
   {
     id: "paper-dr-tobin", order: 61, rung: 6, title: "Domain Randomization for Sim-to-Real Transfer", authors: "Tobin et al.", year: 2017, venue: "IROS", area: "sim2real",
     url: "https://arxiv.org/abs/1703.06907", verdict: "SKIM", difficulty: 2,
@@ -464,7 +464,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-libero", order: 62, rung: 6, title: "LIBERO (+ LIBERO-Plus robustness critique)", authors: "Liu et al. (UT Austin) / Fei et al.", year: 2023, area: "evaluation",
     url: "https://arxiv.org/abs/2306.03310", codeUrl: "https://github.com/Lifelong-Robot-Learning/LIBERO", verdict: "SKIM", difficulty: 3,
-    whyItMatters: "The default VLA benchmark AND its saturation critique (2510.13626, CVPR 2026): ≥97% scores that collapse under perturbation. Read the pair together — benchmark literacy in one sitting.",
+    whyItMatters: "The default VLA benchmark AND its saturation critique (2510.13626, CVPR 2026): ≥97% scores that collapse under perturbation. Read the pair together, benchmark literacy in one sitting.",
     prereqNodeIds: ["l11-eval-statistics"], keyIdeas: ["Procedural task suites", "Perturbation-collapse as memorization evidence"],
     questions: ["What do LIBERO scores measure vs what people cite them as measuring? Reproduce a mini-Plus on your own model (l12-vla-eval)."],
     reproduction: { feasibility: "full", plan: "Your perturbation study (l12-vla-eval).", compute: "8–16 GB" },
@@ -472,7 +472,7 @@ export const PAPERS: Paper[] = [
   {
     id: "paper-roboarena", order: 63, rung: 6, title: "RoboArena: Distributed Real-World Evaluation of Generalist Robot Policies", authors: "Atreya et al.", year: 2025, venue: "CoRL 2025", area: "evaluation",
     url: "https://arxiv.org/abs/2506.18123", verdict: "READ", difficulty: 3,
-    whyItMatters: "How the field now evaluates for real: double-blind pairwise A/B across a distributed robot network — and the statistics behind honest comparisons.",
+    whyItMatters: "How the field now evaluates for real: double-blind pairwise A/B across a distributed robot network, and the statistics behind honest comparisons.",
     prereqNodeIds: ["l11-eval-statistics"], keyIdeas: ["Pairwise blind eval", "Eval-count statistics at field scale"],
     questions: ["Why pairwise instead of absolute scores? What does its data imply about single-lab evals?"],
   },

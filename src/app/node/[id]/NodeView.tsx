@@ -92,14 +92,14 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
       {/* why */}
       <Panel accent={level.accent}>
         <SectionTitle>Why this is worth your time</SectionTitle>
-        <p className="text-[14px] leading-relaxed text-ink"><SmartText>{pk.whyNow}</SmartText></p>
+        <p className="text-[15.5px] leading-[1.7] text-ink"><SmartText>{pk.whyNow}</SmartText></p>
       </Panel>
 
       {/* repair-class nodes lead with the test-out (Δ1: test out first, patch only gaps) */}
       {pk.diagnostic?.repair && (
         <Panel accent="#e8b34d">
           <SectionTitle>Test out first — only fix what breaks</SectionTitle>
-          <p className="text-sm leading-relaxed text-dim"><SmartText>{pk.diagnostic.prompt}</SmartText></p>
+          <p className="text-[14.5px] leading-[1.7] text-dim"><SmartText>{pk.diagnostic.prompt}</SmartText></p>
           <p className="mt-1 mb-2 text-[11px] text-faint">
             ~{pk.diagnostic.minutes} min. Pass → skip this node. Everything below is only for
             patching what the diagnostic exposes.
@@ -115,7 +115,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
             <SectionTitle>What you&apos;ll be able to do</SectionTitle>
             <ul className="space-y-1.5">
               {node.objectives.map((o, i) => (
-                <li key={i} className="flex gap-2 text-sm text-ink">
+                <li key={i} className="flex gap-2 text-[15px] leading-relaxed text-ink">
                   <span className="text-acc">▸</span>
                   {o}
                 </li>
@@ -154,7 +154,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
             <Panel>
               <SectionTitle>Where people trip up</SectionTitle>
               {node.misconceptions.map((m, i) => (
-                <div key={i} className="text-sm text-dim">✗ {m}</div>
+                <div key={i} className="text-[14.5px] leading-relaxed text-dim">✗ {m}</div>
               ))}
             </Panel>
           )}

@@ -151,12 +151,12 @@ export default function TodayPage() {
           </p>
 
           <div className="mt-4">
-            <div className="text-[12px] font-medium text-dim">By tonight, you&apos;ll be able to:</div>
-            <p className="mt-1 text-[14.5px] leading-relaxed text-ink"><SmartText>{packet?.prove.task ?? bottleneck.masteryTest}</SmartText></p>
+            <div className="text-[13px] font-medium text-dim">By tonight, you&apos;ll be able to:</div>
+            <p className="mt-1.5 text-[15.5px] leading-[1.7] text-ink"><SmartText>{packet?.prove.task ?? bottleneck.masteryTest}</SmartText></p>
           </div>
           <div className="mt-3">
-            <div className="text-[12px] font-medium text-dim">Why this first</div>
-            <p className="mt-1 text-[13px] leading-relaxed text-dim">
+            <div className="text-[13px] font-medium text-dim">Why this first</div>
+            <p className="mt-1 text-[14px] leading-[1.65] text-dim">
               {bottleneck.why}{" "}
               {nextUnlock && <span className="text-faint">It opens up {nextUnlock.title}.</span>}
             </p>
@@ -182,7 +182,7 @@ export default function TodayPage() {
                     }}
                     aria-hidden
                   />
-                  <span className={`text-[13px] ${s.done ? "text-faint line-through" : i === firstOpen ? "font-medium text-ink" : "text-dim"}`}>
+                  <span className={`text-[14px] ${s.done ? "text-faint line-through" : i === firstOpen ? "font-medium text-ink" : "text-dim"}`}>
                     {humanStep(s.label)}
                   </span>
                 </Link>

@@ -3,7 +3,7 @@
 // GET: heartbeat + pop one queued tutor job. POST: push answer chunks.
 
 import { getRedis } from "@/lib/server/auth";
-import { markOnline, popJob, pushChunks, resolveBridgeToken, DONE_SENTINEL, ERR_SENTINEL } from "@/lib/server/bridge";
+import { markOnline, popJobForOwner, pushChunks, resolveBridgeToken, DONE_SENTINEL, ERR_SENTINEL } from "@/lib/server/bridge";
 
 export const maxDuration = 15;
 
@@ -20,7 +20,8 @@ export async function GET(req: Request) {
   const ctx = await auth(req);
   if (!ctx) return new Response("unauthorized", { status: 401 });
   await markOnline(ctx.redis, ctx.username);
-  const job = await popJob(ctx.redis, ctx.username);
+  // owner's bridge drains its own queue first, then any shared-user jobs
+  const job = await popJobForOwner(ctx.redis, ctx.username);
   return Response.json({ job });
 }
 

@@ -78,7 +78,7 @@ export const LEVELS: Level[] = [
     slug: "robotics-geometry",
     title: "Robotics Geometry",
     codename: "SE(3)",
-    goal: "Rotations, transforms, kinematics — built as your own library, PoE-first.",
+    goal: "Rotations, transforms, kinematics, built as your own library, PoE-first.",
     exitCriteria: [
       "Own SO(3)/SE(3) + FK/IK/Jacobian library matching reference oracles to 1e-6",
       "Explain why Euler angles fail and quaternions double-cover",
@@ -107,7 +107,7 @@ export const LEVELS: Level[] = [
     codename: "STACK",
     goal: "ROS 2 Jazzy literacy + MuJoCo depth: infrastructure, not identity.",
     exitCriteria: [
-      "Simulated robot with sensors, ros2_control, launch files and bags — built by you",
+      "Simulated robot with sensors, ros2_control, launch files and bags, built by you",
       "Read C++ robotics code without fear",
     ],
     phase: { startDay: 80, endDay: 105 },
@@ -185,7 +185,7 @@ export const LEVELS: Level[] = [
     slug: "world-models",
     title: "World Models",
     codename: "DREAM",
-    goal: "Latent dynamics, imagination training, video world models — and one trained WM.",
+    goal: "Latent dynamics, imagination training, video world models, and one trained WM.",
     exitCriteria: [
       "A world model trained by you (TD-MPC2/DINO-WM class) with a planning demo",
       "Argue both sides of the VLA-vs-world-model debate with evidence",
@@ -198,7 +198,7 @@ export const LEVELS: Level[] = [
     slug: "sim-to-real",
     title: "Sim-to-Real",
     codename: "REALITY",
-    goal: "Reality gap, domain randomization, sim2sim discipline — hardware optional.",
+    goal: "Reality gap, domain randomization, sim2sim discipline, hardware optional.",
     exitCriteria: [
       "DR ablation completed: policy robustness measured under perturbed dynamics",
       "Sim2sim transfer executed (train in GPU-parallel sim, validate in vanilla MuJoCo)",
@@ -211,7 +211,7 @@ export const LEVELS: Level[] = [
     slug: "research-apprenticeship",
     title: "Research Apprenticeship",
     codename: "METHOD",
-    goal: "Paper reading, reproduction methodology, experiment design — from Month 2.",
+    goal: "Paper reading, reproduction methodology, experiment design, from Month 2.",
     exitCriteria: [
       "One rigorous component-level reproduction with report, deviations and failure analysis",
       "Every claim you make backed by an experiment log entry",

@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { NODE_MAP } from "@/content/nodes";
 import { getRedis, rateLimit, requireSession } from "@/lib/server/auth";
 import { loadAIKeys, pickProvider } from "@/lib/server/ai-keys";
-import { bridgeOnline, enqueueJob, streamJobOutput } from "@/lib/server/bridge";
+import { bridgeOnline, bumpShareCount, enqueueJob, enqueueSharedJob, sharedBridgeFor, streamJobOutput } from "@/lib/server/bridge";
 import {
   buildGrounding, buildSystemPrompt, streamClaude, streamOpenAI,
   TUTOR_DAILY_LIMIT, tutorKeySet, type StreamResult, type TutorMessage,
@@ -36,6 +36,7 @@ const MODEL_ALLOW: Record<string, string[]> = {
 
 type Resolved =
   | { kind: "bridge"; engine: "claude" | "codex"; username: string }
+  | { kind: "shared"; username: string }
   | { kind: "user"; provider: "anthropic" | "openai"; key: string; username: string }
   | { kind: "cli" }
   | { kind: "env"; username: string | null };
@@ -51,6 +52,8 @@ async function resolveBackend(req: Request): Promise<Resolved | { kind: "none"; 
       }
       const pick = pickProvider(keys);
       if (pick) return { kind: "user", provider: pick.provider, key: pick.key, username: ctx.user.username };
+      // an admin can lend their bridge to allowlisted users (safe tutor mode only)
+      if ((await sharedBridgeFor(redis, ctx.user.username)).ok) return { kind: "shared", username: ctx.user.username };
       if (claudeCliAvailable()) return { kind: "cli" };
       if (tutorKeySet()) return { kind: "env", username: ctx.user.username };
       return { kind: "none", reason: "connect" };
@@ -68,6 +71,7 @@ async function resolveBackend(req: Request): Promise<Resolved | { kind: "none"; 
 
 const backendName = (r: Resolved): string =>
   r.kind === "bridge" ? `bridge-${r.engine}`
+  : r.kind === "shared" ? "shared"
   : r.kind === "user" ? (r.provider === "anthropic" ? "your-claude" : "your-chatgpt")
   : r.kind === "cli" ? "cli"
   : "deployment";
@@ -140,6 +144,16 @@ export async function POST(req: Request) {
       system, messages: messages.slice(-20),
     });
     return new Response(streamJobOutput(redis, id), { headers });
+  }
+
+  if (r.kind === "shared") {
+    const redis = getRedis()!;
+    const id = randomUUID();
+    // shared jobs run on the admin's bridge in SAFE tutor mode (raw:false enforced
+    // when the owner's bridge pops them); count against the per-user daily cap
+    await enqueueSharedJob(redis, { id, provider: "claude", system, messages: messages.slice(-20) });
+    await bumpShareCount(redis, r.username);
+    return new Response(streamJobOutput(redis, id, 120_000), { headers });
   }
 
   if (r.kind === "cli") {

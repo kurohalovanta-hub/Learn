@@ -7,7 +7,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Algebra Repair (Test-Out Loop)",
     track: "math",
     labs: ["math"],
-    why: "Algebraic fluency is the #1 predictor of survival in calculus and probability. Repair it with diagnostics, not lectures — patch only what's actually broken.",
+    why: "Algebraic fluency is the #1 predictor of survival in calculus and probability. Repair it with diagnostics, not lectures, patch only what's actually broken.",
     objectives: [
       "Fluent equation manipulation, factoring, fractions with variables",
       "Exponent and logarithm rules automatic (log rules = how loss functions are read)",
@@ -25,7 +25,7 @@ export const L2_NODES: SkillNode[] = [
     masteryGate: "gold",
     masteryTest: "OpenStax Algebra & Trig chapter practice tests (equations, exponentials/logs) at ≥90% without notes.",
     diagnostic: "Khan Algebra 2 Course Challenge ≥85% → mark mastered, move on immediately.",
-    misconceptions: ["'I was bad at math in school' usually means 'I have 12 specific gaps' — the diagnostic finds them; you are not re-taking school."],
+    misconceptions: ["'I was bad at math in school' usually means 'I have 12 specific gaps', the diagnostic finds them; you are not re-taking school."],
   },
   {
     id: "l2-functions-graphs",
@@ -44,11 +44,11 @@ export const L2_NODES: SkillNode[] = [
     primary: { resourceId: "khan-math", sections: "Algebra 2 'Transformations of functions' + Precalc 'Composite functions'" },
     equations: ["(f\\circ g)(x)=f(g(x))", "f^{-1}(f(x))=x"],
     exercises: [
-      "Sketch (by hand, then verify in matplotlib): e^x, ln x, x², 1/x, sigmoid — and shifted/scaled variants",
+      "Sketch (by hand, then verify in matplotlib): e^x, ln x, x², 1/x, sigmoid, and shifted/scaled variants",
       "Given graphs, recover the formula (10 reps)",
     ],
     masteryGate: "gold",
-    masteryTest: "Decompose σ(Wx+b) into primitive transformations and sketch the effect of changing W and b — the exact skill of reading a neuron.",
+    masteryTest: "Decompose σ(Wx+b) into primitive transformations and sketch the effect of changing W and b, the exact skill of reading a neuron.",
     diagnostic: "Sketch y = 2e^{-(x-1)} + 3 without plotting; state domain/range of ln(x-2).",
   },
   {
@@ -81,7 +81,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Vectors & Dot Products",
     track: "math",
     labs: ["math", "robotics"],
-    why: "States, actions, observations, gradients, embeddings — everything in this field is a vector. The dot product (similarity, projection) is the single most-used operation in ML.",
+    why: "States, actions, observations, gradients, embeddings, everything in this field is a vector. The dot product (similarity, projection) is the single most-used operation in ML.",
     objectives: [
       "Vectors as arrows AND as data; addition/scaling geometrically",
       "Dot product: algebraic, geometric (|a||b|cosθ), and as similarity",
@@ -89,7 +89,7 @@ export const L2_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l2-functions-graphs" }],
     hours: 6,
-    primary: { resourceId: "3b1b-linalg", sections: "Ch 1–2 (vectors, span) — before anything computational" },
+    primary: { resourceId: "3b1b-linalg", sections: "Ch 1–2 (vectors, span), before anything computational" },
     backup: { resourceId: "vmls", sections: "Ch 1, 3 (+ Python companion notebooks)" },
     equations: ["a\\cdot b = \\sum_i a_i b_i = \\|a\\|\\|b\\|\\cos\\theta", "\\operatorname{proj}_b a = \\frac{a\\cdot b}{b\\cdot b}\\, b"],
     exercises: [
@@ -118,13 +118,13 @@ export const L2_NODES: SkillNode[] = [
     backup: { resourceId: "vmls", sections: "Ch 6–8, 10–11 in NumPy" },
     equations: ["(AB)_{ij}=\\sum_k A_{ik}B_{kj}", "A^{-1}A = I", "\\det(AB)=\\det A\\,\\det B"],
     exercises: [
-      "Animate a square under 6 different 2×2 matrices (rotation, shear, scale, reflection, singular, composition) — label each",
+      "Animate a square under 6 different 2×2 matrices (rotation, shear, scale, reflection, singular, composition), label each",
       "Solve a 3×3 system by hand once; then np.linalg.solve forever; explain what singular means when solve fails",
     ],
     masteryGate: "gold",
     masteryTest: "Given a picture of a transformed grid, write down the matrix. Given R(θ)S(2,1), predict the picture. Both directions, no tools.",
     diagnostic: "What does a determinant of 0 mean geometrically? Compute a 2×2 inverse by hand.",
-    misconceptions: ["A matrix is not a 'table of numbers' — it is a linear map; the numbers are just its effect on basis vectors."],
+    misconceptions: ["A matrix is not a 'table of numbers', it is a linear map; the numbers are just its effect on basis vectors."],
   },
   {
     id: "l2-linear-maps",
@@ -140,15 +140,15 @@ export const L2_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l2-matrices" }],
     hours: 8,
-    primary: { resourceId: "vmls", sections: "Ch 5 (independence/basis/Gram–Schmidt) + Ch 12–13 (least squares, data fitting) — implemented in NumPy" },
+    primary: { resourceId: "vmls", sections: "Ch 5 (independence/basis/Gram–Schmidt) + Ch 12–13 (least squares, data fitting), implemented in NumPy" },
     backup: { resourceId: "3b1b-linalg", sections: "Ch 9, 13 (dot products, change of basis)" },
     equations: ["\\hat{x} = (A^{\\top}A)^{-1}A^{\\top} b", "b - A\\hat{x} \\perp \\operatorname{col}(A)"],
     exercises: [
-      "Fit a line, then a cubic, to noisy data via the normal equations — no libraries; compare to np.linalg.lstsq",
+      "Fit a line, then a cubic, to noisy data via the normal equations, no libraries; compare to np.linalg.lstsq",
       "Show rank-deficiency breaking the normal equations; fix with pseudo-inverse",
     ],
     masteryGate: "gold",
-    masteryTest: "Derive the normal equations from the orthogonality condition and use them to fit a polynomial — derivation and code both from a blank page.",
+    masteryTest: "Derive the normal equations from the orthogonality condition and use them to fit a polynomial, derivation and code both from a blank page.",
     diagnostic: "Why is A^T A invertible iff A has independent columns? What does the residual being orthogonal to col(A) mean?",
   },
   {
@@ -157,7 +157,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Eigenvalues, Eigenvectors & SVD",
     track: "math",
     labs: ["math", "ml"],
-    why: "Eigen-thinking explains stability (control), covariance (statistics), PCA, and why deep-network training explodes or dies. SVD is the master decomposition behind low-rank everything — including LoRA.",
+    why: "Eigen-thinking explains stability (control), covariance (statistics), PCA, and why deep-network training explodes or dies. SVD is the master decomposition behind low-rank everything, including LoRA.",
     objectives: [
       "Av = λv geometrically; eigendecomposition of symmetric matrices",
       "Powers of A through eigenvalues (stability preview for control)",
@@ -183,7 +183,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Derivatives & the Chain Rule",
     track: "math",
     labs: ["math", "ml"],
-    why: "The chain rule is backpropagation. Literally. Automatic differentiation is this node applied recursively — master it here and Level 3's backprop derivation becomes bookkeeping.",
+    why: "The chain rule is backpropagation. Literally. Automatic differentiation is this node applied recursively, master it here and Level 3's backprop derivation becomes bookkeeping.",
     objectives: [
       "Derivative as local slope AND as sensitivity multiplier",
       "Rules: power/product/quotient; CHAIN RULE until automatic",
@@ -197,11 +197,11 @@ export const L2_NODES: SkillNode[] = [
     equations: ["\\frac{d}{dx}f(g(x)) = f'(g(x))\\,g'(x)", "f'(x)\\approx\\frac{f(x+h)-f(x-h)}{2h}"],
     exercises: [
       "30 chain-rule reps ending with σ(w·x+b) differentiated w.r.t. w, x, and b",
-      "Write check_grad(f, df, x): finite-difference verification — you will reuse this for years",
+      "Write check_grad(f, df, x): finite-difference verification, you will reuse this for years",
     ],
     masteryGate: "gold",
     masteryTest: "Differentiate L = (y - σ(wx+b))² w.r.t. w and b by hand, then verify with your finite-difference checker. This IS a neuron's backward pass.",
-    diagnostic: "d/dx of e^{3x²}, of ln(sin x), of 1/(1+e^{-x}) — under 90 seconds total.",
+    diagnostic: "d/dx of e^{3x²}, of ln(sin x), of 1/(1+e^{-x}), under 90 seconds total.",
   },
   {
     id: "l2-multivariable",
@@ -209,7 +209,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Gradients, Jacobians & Hessians",
     track: "math",
     labs: ["math", "ml", "robotics"],
-    why: "∇L points uphill — training walks downhill. The Jacobian is simultaneously backprop's bookkeeping AND the robot-arm velocity map. One object, two careers.",
+    why: "∇L points uphill, training walks downhill. The Jacobian is simultaneously backprop's bookkeeping AND the robot-arm velocity map. One object, two careers.",
     objectives: [
       "Partial derivatives; gradient as steepest-ascent vector; level sets",
       "Jacobian of vector-valued functions; multivariable chain rule as matrix product",
@@ -227,10 +227,10 @@ export const L2_NODES: SkillNode[] = [
     exercises: [
       "Plot a 2D loss surface + its gradient field; walk downhill by hand for 5 steps",
       "Compute the Jacobian of polar→cartesian by hand; verify with finite differences",
-      "Hessian eigenvalues at a saddle vs a bowl — visualize both",
+      "Hessian eigenvalues at a saddle vs a bowl, visualize both",
     ],
     masteryGate: "gold",
-    masteryTest: "For f(x) = ‖Ax - b‖², derive ∇f = 2Aᵀ(Ax-b) by components once, then by matrix calculus — and verify numerically. (Gradient descent on this = training linear regression.)",
+    masteryTest: "For f(x) = ‖Ax - b‖², derive ∇f = 2Aᵀ(Ax-b) by components once, then by matrix calculus, and verify numerically. (Gradient descent on this = training linear regression.)",
     diagnostic: "Gradient of x·y at (2,3)? Jacobian shape of f: ℝ⁵→ℝ³? What does a negative Hessian eigenvalue mean?",
   },
   {
@@ -249,7 +249,7 @@ export const L2_NODES: SkillNode[] = [
     hours: 5,
     primary: { resourceId: "pauls-notes", sections: "Calc I: antiderivatives, u-substitution, FTC" },
     backup: { resourceId: "3b1b-calculus", sections: "Ch 8–9" },
-    skip: ["Trig substitution, partial fractions, volumes/arc length, all convergence-test machinery — weeks of effort ML never uses"],
+    skip: ["Trig substitution, partial fractions, volumes/arc length, all convergence-test machinery, weeks of effort ML never uses"],
     equations: ["\\int_a^b f(x)\\,dx = F(b)-F(a)", "\\int_{-\\infty}^{\\infty} p(x)\\,dx = 1"],
     exercises: ["Implement trapezoid integration; verify against exact answers; integrate a Gaussian numerically and discover ≈0.68 within ±1σ"],
     masteryGate: "silver",
@@ -278,9 +278,9 @@ export const L2_NODES: SkillNode[] = [
       "Monte-Carlo verify three conditional-probability puzzles you first solve by hand",
     ],
     masteryGate: "gold",
-    masteryTest: "Solve a two-stage Bayes problem (noisy sensor, prior belief) by hand AND by simulation, matching to 2 decimals — this is a robot localization update in miniature.",
+    masteryTest: "Solve a two-stage Bayes problem (noisy sensor, prior belief) by hand AND by simulation, matching to 2 decimals, this is a robot localization update in miniature.",
     diagnostic: "A test is 99% accurate, disease hits 1/1000. P(sick | positive)? Estimate, then compute.",
-    misconceptions: ["P(A|B) ≠ P(B|A) — confusing them is the single most common quantitative error in science."],
+    misconceptions: ["P(A|B) ≠ P(B|A), confusing them is the single most common quantitative error in science."],
   },
   {
     id: "l2-random-variables",
@@ -293,7 +293,7 @@ export const L2_NODES: SkillNode[] = [
       "Discrete/continuous RVs, PMF/PDF/CDF",
       "Expectation, variance, covariance; linearity of expectation as a superpower",
       "Distribution zoo: Bernoulli, binomial, uniform, exponential, Gaussian",
-      "LLN + CLT — why Gaussians are everywhere; why means of many rollouts stabilize",
+      "LLN + CLT, why Gaussians are everywhere; why means of many rollouts stabilize",
     ],
     prereqs: [{ id: "l2-probability" }, { id: "l2-integrals" }],
     hours: 10,
@@ -309,7 +309,7 @@ export const L2_NODES: SkillNode[] = [
       "Fit a Gaussian to noisy sensor data by computing μ̂, σ̂",
     ],
     masteryGate: "gold",
-    masteryTest: "Derive 𝔼 and Var of a Bernoulli and a uniform from definitions; simulate a 50-rollout policy evaluation twice and explain (with CLT) why success rates differ run-to-run — the eval-statistics insight this whole field just relearned.",
+    masteryTest: "Derive 𝔼 and Var of a Bernoulli and a uniform from definitions; simulate a 50-rollout policy evaluation twice and explain (with CLT) why success rates differ run-to-run, the eval-statistics insight this whole field just relearned.",
     diagnostic: "Var(aX+b)? 𝔼[X+Y] with X,Y dependent? Sketch a Gaussian and mark μ±σ mass.",
   },
   {
@@ -318,7 +318,7 @@ export const L2_NODES: SkillNode[] = [
     title: "Estimation & Maximum Likelihood",
     track: "math",
     labs: ["math", "ml"],
-    why: "'Training a model' formally means maximum likelihood. Cross-entropy loss IS negative log-likelihood — see it here once and loss functions stop being arbitrary.",
+    why: "'Training a model' formally means maximum likelihood. Cross-entropy loss IS negative log-likelihood, see it here once and loss functions stop being arbitrary.",
     objectives: [
       "Likelihood vs probability; log-likelihood; MLE recipe (differentiate, set to zero)",
       "MLE for Bernoulli and Gaussian by hand",
@@ -353,7 +353,7 @@ export const L2_NODES: SkillNode[] = [
     ],
     prereqs: [{ id: "l2-multivariable" }],
     hours: 9,
-    primary: { resourceId: "d2l", sections: "Ch 12.1–12.6 (convexity, GD, SGD, minibatch, momentum) — run every code cell" },
+    primary: { resourceId: "d2l", sections: "Ch 12.1–12.6 (convexity, GD, SGD, minibatch, momentum), run every code cell" },
     backup: { resourceId: "khan-multivariable", sections: "Lagrange-multiplier articles" },
     equations: ["\\theta_{t+1} = \\theta_t - \\eta\\,\\nabla L(\\theta_t)", "\\mathcal{L}(x,\\lambda)=f(x)+\\lambda g(x)"],
     exercises: [
@@ -383,7 +383,7 @@ export const L2_NODES: SkillNode[] = [
     hours: 8,
     masteryGate: "gold",
     masteryTest: "One sitting, closed book: (1) derive ∇‖Ax-b‖² and implement GD to solve it; (2) chain-rule a two-layer scalar network by hand and verify with finite differences; (3) MLE for a Gaussian from scratch; (4) power-iterate the top eigenvector and explain what it means; (5) Bayes update a sensor belief. All five in code + derivation pages.",
-    diagnostic: "—",
+    diagnostic: ", ",
     exercises: [],
   },
 ];

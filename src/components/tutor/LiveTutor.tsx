@@ -32,12 +32,12 @@ const parseOpts = (s: string): string[] => {
   const last = matches[matches.length - 1];
   return last ? last[1].split("|").map((x) => x.trim()).filter(Boolean).slice(0, 4) : [];
 };
-const DEPTH_CHIPS = ["shorter", "go deeper", "show me an example", "skip ahead — I know this"];
+const DEPTH_CHIPS = ["shorter", "go deeper", "show me an example", "skip ahead, I know this"];
 const STARTERS = [
   "Teach me this from zero.",
-  "Quiz me first — maybe I can skip parts.",
+  "Quiz me first, maybe I can skip parts.",
   "Why does this node matter for the goal?",
-  "I'm stuck — diagnose what I'm missing.",
+  "I'm stuck. Diagnose what I'm missing.",
 ];
 
 function TeacherAvatar({ state }: { state: "idle" | "thinking" | "speaking" }) {
@@ -178,7 +178,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           for (const e of evs) store.recordEvidence(e);
           const done: Msg = {
             role: "assistant",
-            content: `✓ Session logged — ${evs.length} evidence entries recorded. A tutor session supports progress; the typed prove-it is still yours to do.`,
+            content: `✓ Session logged. ${evs.length} evidence entries recorded. A tutor session supports progress; the typed prove-it is still yours to do.`,
           };
           setMessages([...history, done]);
           setChips([]);
@@ -191,12 +191,12 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
             body: JSON.stringify({ digest: buildProgressDigest({ nodes: st.nodes, events: st.events, logs: st.logs, tutorChats: st.tutorChats, weeklies: st.weeklies, ideas: st.ideas, experiments: st.experiments, papers: st.papers }) }),
           }).catch(() => {});
         } else {
-          setNotice(`Couldn't parse the session summary (${parsed.error}) — evidence not logged.`);
+          setNotice(`Couldn't parse the session summary (${parsed.error}); evidence not logged.`);
         }
       }
     } catch {
       if (!controller.signal.aborted) {
-        setMessages([...history, { role: "assistant", content: "⚠ connection dropped — send that again." }]);
+        setMessages([...history, { role: "assistant", content: "⚠ connection dropped, send that again." }]);
       }
     } finally {
       setStreaming(false);
@@ -216,7 +216,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
   const sendCodeToTutor = () => {
     const out = runResult
       ? `\n\nREAL OUTPUT (in-browser Python, ${runResult.ms} ms):\n\`\`\`\n${(runResult.stdout || "").slice(0, 3000)}${runResult.error ? `\nERROR: ${runResult.error}` : ""}\n\`\`\``
-      : "\n\n(not run yet — review the code as written)";
+      : "\n\n(not run yet, review the code as written)";
     void send(`Review my code for this node's practice work.\n\`\`\`python\n${code.slice(0, 6000)}\n\`\`\`${out}\n\nWhere am I wrong, and what did I get right?`);
   };
 
@@ -225,15 +225,15 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
   if (avail !== "ready") {
     return (
       <div className="rounded-md border border-line bg-panel2/50 p-3">
-        <div className="mono-label mb-1.5">your tutor — one step from alive</div>
+        <div className="mono-label mb-1.5">your tutor, one step from alive</div>
         {avail === "connect" ? (
           <div className="mb-2 space-y-2 text-[12px] text-faint">
-            <div>Connect your Claude or ChatGPT and the tutor wakes up right here — it teaches from this node&apos;s curated materials and remembers every conversation in your account.</div>
+            <div>Connect your Claude or ChatGPT and the tutor wakes up right here. It teaches from this node&apos;s curated materials and remembers every conversation in your account.</div>
             <AIConnect compact />
           </div>
         ) : (
           <div className="mb-2 text-[12px] text-faint">
-            {avail === "unauthed" && "Sign in, then connect your Claude or ChatGPT in Settings — the tutor runs on your own AI, from any device."}
+            {avail === "unauthed" && "Sign in, then connect your Claude or ChatGPT in Settings. The tutor runs on your own AI, from any device."}
             {avail === "no-key" && "Accounts aren't enabled on this deployment yet, so the tutor can't hold your connection. The copy-paste bridge below works with any AI meanwhile."}
           </div>
         )}
@@ -254,7 +254,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           <div className="truncate text-[11.5px] text-faint">
             {streaming
               ? (speaking ? "explaining…" : "thinking…")
-              : `grounded in this node's curated materials — ask anything${
+              : `grounded in this node's curated materials, ask anything${
                   backend === "bridge-claude" ? " · your Claude Code (bridge)" :
                   backend === "bridge-codex" ? " · your ChatGPT Codex (bridge)" :
                   backend === "your-claude" ? " · your Claude key" :
@@ -305,7 +305,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
               >
                 {m.role === "assistant"
                   ? m.content
-                    ? <Markdown className="!text-[13.5px]">{m.content}</Markdown>
+                    ? <Markdown className="!text-[14.5px] !leading-[1.7]">{m.content}</Markdown>
                     : <span className="font-mono text-[12px] text-faint">…</span>
                   : m.content}
               </div>
@@ -350,7 +350,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
             }
           }}
           rows={1}
-          placeholder="or type — Enter sends"
+          placeholder="or type, Enter sends"
           className="min-h-[38px] flex-1 resize-y !text-[13px]"
         />
         <button

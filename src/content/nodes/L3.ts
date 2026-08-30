@@ -10,7 +10,7 @@ export const L3_NODES: SkillNode[] = [
     why: "Before any algorithm: what does it mean for a machine to learn from data, and how do we know it worked? Getting train/val/test right is the difference between science and self-deception.",
     objectives: [
       "Supervised learning as function fitting; features/labels/hypothesis class",
-      "Train/validation/test splits — what each is FOR; leakage",
+      "Train/validation/test splits, what each is FOR; leakage",
       "Loss as 'how wrong'; empirical risk; the generalization question",
     ],
     prereqs: [{ id: "l1-numpy" }, { id: "l2-functions-graphs" }],
@@ -22,7 +22,7 @@ export const L3_NODES: SkillNode[] = [
       "Hand-fit a line to 10 points by eyeball; define and compute its MSE",
     ],
     masteryGate: "silver",
-    masteryTest: "Explain to a rubber duck: why can a model score 99% on training data and be worthless — and name the three distinct ways your pipeline could be lying to you.",
+    masteryTest: "Explain to a rubber duck: why can a model score 99% on training data and be worthless, and name the three distinct ways your pipeline could be lying to you.",
     diagnostic: "What is the validation set for, precisely, and why does tuning on test data invalidate it?",
   },
   {
@@ -31,7 +31,7 @@ export const L3_NODES: SkillNode[] = [
     title: "Linear Regression From Scratch",
     track: "core",
     labs: ["ml"],
-    why: "The E. coli of machine learning: every concept (loss, gradient, fit, generalization) appears here in its simplest living form — and you already derived its math in L2.",
+    why: "The E. coli of machine learning: every concept (loss, gradient, fit, generalization) appears here in its simplest living form, and you already derived its math in L2.",
     objectives: [
       "Model ŷ = Xw + b; MSE loss; closed-form vs gradient descent solutions",
       "Feature scaling and why GD needs it",
@@ -44,7 +44,7 @@ export const L3_NODES: SkillNode[] = [
     implementation: "NumPy only: fit synthetic + one real dataset by (a) normal equations, (b) your own GD; overlay both fits; loss-curve plot.",
     exercises: [
       "Show GD diverging without feature scaling, converging with it",
-      "Polynomial features: sweep degree 1→15, plot train vs val error — your first overfitting curve",
+      "Polynomial features: sweep degree 1→15, plot train vs val error, your first overfitting curve",
     ],
     masteryGate: "gold",
     masteryTest: "Blank file → working linear regression (both solutions) on unseen data, with the ∇L derivation on paper. No sklearn, no AI.",
@@ -57,7 +57,7 @@ export const L3_NODES: SkillNode[] = [
     title: "Logistic Regression & Cross-Entropy",
     track: "core",
     labs: ["ml"],
-    why: "Classification introduces probabilities-as-outputs and cross-entropy — the exact loss VLAs use for action tokens. Sigmoid/softmax intuition built here is used daily forever.",
+    why: "Classification introduces probabilities-as-outputs and cross-entropy, the exact loss VLAs use for action tokens. Sigmoid/softmax intuition built here is used daily forever.",
     objectives: [
       "Sigmoid → probability; decision boundaries",
       "Cross-entropy from the Bernoulli MLE you already did",
@@ -74,7 +74,7 @@ export const L3_NODES: SkillNode[] = [
     ],
     implementation: "NumPy logistic regression with GD on a 2D dataset; plot the decision boundary evolving during training.",
     exercises: [
-      "Derive ∂L/∂w for logistic regression — discover it is the same (ŷ-y)x form as linear regression, and explain why",
+      "Derive ∂L/∂w for logistic regression, discover it is the same (ŷ-y)x form as linear regression, and explain why",
       "Implement stable softmax (subtract max); break the naive version with large logits",
     ],
     masteryGate: "gold",
@@ -87,7 +87,7 @@ export const L3_NODES: SkillNode[] = [
     title: "SGD, Momentum & Adam",
     track: "core",
     labs: ["ml"],
-    why: "Nobody trains on full batches. Stochasticity, momentum, and adaptive step sizes are the practical physics of training — learn their behavior on problems small enough to see.",
+    why: "Nobody trains on full batches. Stochasticity, momentum, and adaptive step sizes are the practical physics of training, learn their behavior on problems small enough to see.",
     objectives: [
       "Minibatch SGD: noise vs speed tradeoff; batch-size effects",
       "Momentum and RMS scaling; Adam assembled from both",
@@ -125,7 +125,7 @@ export const L3_NODES: SkillNode[] = [
       "Early stopping: find the val-loss minimum and show test error there vs at the end",
     ],
     masteryGate: "gold",
-    masteryTest: "Given four unlabeled learning-curve plots, diagnose each (underfit/overfit/leak/fine) and prescribe the fix — then produce one example of each yourself.",
+    masteryTest: "Given four unlabeled learning-curve plots, diagnose each (underfit/overfit/leak/fine) and prescribe the fix, then produce one example of each yourself.",
     diagnostic: "λ→∞ does what to the model? Why does more data reduce variance but not bias?",
   },
   {
@@ -157,7 +157,7 @@ export const L3_NODES: SkillNode[] = [
     title: "Backpropagation, Derived",
     track: "core",
     labs: ["ml", "math"],
-    why: "The one derivation you must own before frameworks are allowed to hide it. Backprop is the chain rule organized as bookkeeping over a graph — nothing more, and you prove that here.",
+    why: "The one derivation you must own before frameworks are allowed to hide it. Backprop is the chain rule organized as bookkeeping over a graph, nothing more, and you prove that here.",
     objectives: [
       "Computational graphs; forward values, backward gradients",
       "The local-gradient × upstream-gradient rule; fan-out summation",
@@ -176,7 +176,7 @@ export const L3_NODES: SkillNode[] = [
     masteryGate: "gold",
     masteryTest: "On paper, backprop a 2-layer network (matrix form) from loss to all parameters; then make your scalar autograd reproduce the numbers on a tiny example.",
     diagnostic: "Why does a node used twice SUM its gradients? What is ∂L/∂W's shape for W (m×n)?",
-    misconceptions: ["Backprop is not an approximation and not 'biologically mystical' — it is exact chain-rule bookkeeping."],
+    misconceptions: ["Backprop is not an approximation and not 'biologically mystical', it is exact chain-rule bookkeeping."],
   },
   {
     id: "l3-mlp-numpy",
@@ -184,7 +184,7 @@ export const L3_NODES: SkillNode[] = [
     title: "MLP From Raw NumPy",
     track: "core",
     labs: ["ml"],
-    why: "The rite of passage: a neural network where you wrote every line. After this, PyTorch is a convenience, not a mystery — and the Gold gate on autograd is honestly earned.",
+    why: "The rite of passage: a neural network where you wrote every line. After this, PyTorch is a convenience, not a mystery, and the Gold gate on autograd is honestly earned.",
     objectives: [
       "Forward pass: affine → nonlinearity → affine → softmax",
       "Backward pass: vectorized gradients for every parameter",
@@ -195,7 +195,7 @@ export const L3_NODES: SkillNode[] = [
     primary: { resourceId: "karpathy-z2h", sections: "v3 makemore-MLP as companion (his tensor habits, your NumPy)" },
     implementation: "2-layer MLP on MNIST-class data (or make_moons→digits): forward, backward, train to >95%, all NumPy. Gradient-check every layer before training.",
     exercises: [
-      "Break it five ways on purpose (lr too high, no scaling, dead ReLU init, wrong CE, transposed W) — recognize each failure signature",
+      "Break it five ways on purpose (lr too high, no scaling, dead ReLU init, wrong CE, transposed W), recognize each failure signature",
       "Add L2 and early stopping; show the generalization gap closing",
     ],
     masteryGate: "gold",
