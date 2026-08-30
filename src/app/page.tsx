@@ -14,6 +14,7 @@ import { Bar, EmptyState, NodePill, Panel, SectionTitle, Stat } from "@/componen
 import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
 import { MemorySync } from "@/components/MemorySync";
 import { NODES } from "@/content/nodes";
+import { Halo } from "@/components/brand/Halo";
 
 export default function Dashboard() {
   const store = useStore();
@@ -43,26 +44,36 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      {/* header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="mono-label">{research ? "research command center" : "mission control"}</div>
-          <h1 className="mt-1 font-mono text-2xl font-bold tracking-tight">
-            {Object.values(data.nodes).filter((p) => p.verified).length}
-            <span className="text-dim"> / {NODES.length} verified</span>
-            {phase && <span className="ml-3 text-sm font-normal text-dim">Month {phase.month} · {phase.title}{day ? ` · d${Math.min(day, 210)}` : ""}</span>}
-          </h1>
+      {/* hero band — crafted aurora, a drawn halo drifting at the edge */}
+      <div className="aurora grain relative overflow-hidden rounded-2xl border border-line">
+        <div className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 opacity-80">
+          <Halo size={260} className="hidden sm:block" />
         </div>
-        <div className="flex gap-2">
-          <Link href="/guide" className="btn">? Manual</Link>
-          <Link href="/today" className="btn btn-acc">▶ Open today&apos;s mission</Link>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#070a10] via-[#070a10]/70 to-transparent" aria-hidden />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
+          <div>
+            <div className="text-[12.5px] font-medium text-dim">
+              {research ? "Research mode" : "Welcome back"}
+              {phase && <span className="text-faint"> · {phase.title}{day ? ` · day ${Math.min(day, 210)}` : ""}</span>}
+            </div>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              <span className="tabular-nums">{Object.values(data.nodes).filter((p) => p.verified).length}</span>
+              <span className="text-dim"> of {NODES.length} skills</span>{" "}
+              <span className="text-ink">proven</span>
+            </h1>
+            <p className="mt-1 text-[13px] text-dim">Every one is something you can now do on your own.</p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/guide" className="btn">Field manual</Link>
+            <Link href="/today" className="btn btn-acc">Start today &rarr;</Link>
+          </div>
         </div>
       </div>
 
       {/* first-run orientation — disappears once real work is logged */}
       {isFresh && (
         <Panel accent="#e8b34d">
-          <SectionTitle>new here — 3 things and you&apos;re oriented</SectionTitle>
+          <SectionTitle>New here? Three quick things</SectionTitle>
           <div className="mb-3 space-y-2"><TutorStatusCard /><MemorySync compact /></div>
           <div className="grid gap-2 text-sm text-dim md:grid-cols-3">
             <div>
@@ -73,21 +84,21 @@ export default function Dashboard() {
             <div>
               <span className="font-mono text-xs text-acc">02</span>{" "}
               Set your start date &amp; hours in <Link href="/settings" className="text-acc hover:underline">Settings</Link> to
-              boot the day counter.
+              start the day count.
             </div>
             <div>
               <span className="font-mono text-xs text-acc">03</span>{" "}
               Open <Link href="/today" className="text-acc hover:underline">Today</Link> and take the first ⚡ lesson.
-              The system handles the sequencing.
+              It picks what comes next for you.
             </div>
           </div>
         </Panel>
       )}
 
       {/* answer WHAT DO I DO NEXT immediately */}
-      <Panel accent="var(--acc-code)">
-        <SectionTitle right={<Link href="/today" className="text-xs text-acc hover:underline">full sequence →</Link>}>
-          what do I do next
+      <Panel glass>
+        <SectionTitle right={<Link href="/today" className="text-xs text-acc hover:underline">see the full plan →</Link>}>
+          Start here
         </SectionTitle>
         {mission.slots.length > 0 ? (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -109,7 +120,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <EmptyState title="Log your first session to boot the scheduler" />
+          <EmptyState title="Log your first session and this fills in" />
         )}
         {mission.blockers.length > 0 && (
           <div className="mt-3 space-y-1">
@@ -127,13 +138,13 @@ export default function Dashboard() {
         <Stat label="verified" value={`${stats.verifiedCount}`} sub={stats.provisionalCount > 0 ? `+${stats.provisionalCount} claimed, unverified` : "capabilities held"} accent="#52d68a" />
         <Stat label="independence" value={stats.independence != null ? `${stats.independence}%` : "—"} sub="last 30 days" accent="#4dd6e8" />
         <Stat label="papers deep-read" value={stats.papersRead} sub={`${stats.papersReproduced} reproduced`} accent="#a78bfa" />
-        <Stat label="review due" value={reviews.length} sub="retrieval queue" accent={reviews.length > 10 ? "#f4586e" : "#8b97a7"} />
+        <Stat label="review due" value={reviews.length} sub="waiting to review" accent={reviews.length > 10 ? "#f4586e" : "#8b97a7"} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* readiness */}
         <Panel className="lg:col-span-1">
-          <SectionTitle>research readiness</SectionTitle>
+          <SectionTitle>Research readiness</SectionTitle>
           <div className="flex items-baseline gap-2">
             <div className="font-mono text-4xl font-bold text-acc">{readiness}</div>
             <div className="text-sm text-faint">/ 100</div>
@@ -182,7 +193,7 @@ export default function Dashboard() {
       <div className="grid gap-5 lg:grid-cols-3">
         {/* current work */}
         <Panel>
-          <SectionTitle>current project</SectionTitle>
+          <SectionTitle>What you&apos;re building</SectionTitle>
           {proj ? (
             <Link href="/projects" className="block hover:text-acc">
               <div className="font-mono text-xs text-acc-robot">P{proj.num}</div>
@@ -193,7 +204,7 @@ export default function Dashboard() {
             <div className="text-sm text-faint">Ladder opens with Level 1.</div>
           )}
           <div className="mt-4 border-t border-line pt-3">
-            <SectionTitle>current paper</SectionTitle>
+            <SectionTitle>What you&apos;re reading</SectionTitle>
             {paperMeta ? (
               <Link href="/papers" className="block text-sm hover:text-acc">
                 <span className="font-mono text-xs text-acc-ml">#{paperMeta.order}</span> {paperMeta.title}
@@ -207,7 +218,7 @@ export default function Dashboard() {
 
         {/* warnings */}
         <Panel>
-          <SectionTitle>system warnings</SectionTitle>
+          <SectionTitle>Worth a look</SectionTitle>
           {warns.length === 0 ? (
             <div className="text-sm text-acc-robot">✓ No failure modes detected.</div>
           ) : (
@@ -224,7 +235,7 @@ export default function Dashboard() {
 
         {/* next unlocks */}
         <Panel>
-          <SectionTitle right={<Link href="/tree" className="text-xs text-acc hover:underline">tree →</Link>}>next unlocks</SectionTitle>
+          <SectionTitle right={<Link href="/tree" className="text-xs text-acc hover:underline">skill tree →</Link>}>Opens up next</SectionTitle>
           {nextUnlocks.length === 0 ? (
             <EmptyState title="Nothing available — clear a gate" />
           ) : (

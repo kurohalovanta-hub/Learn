@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Halo, HaloMark } from "@/components/brand/Halo";
 import { TutorStatusCard } from "@/components/tutor/TutorStatusCard";
 import { useAuth } from "@/lib/auth-client";
 import { startSync } from "@/lib/sync";
@@ -42,19 +43,23 @@ export function LoginGate() {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      {/* hero — the halo, the climb */}
-      <div className="relative flex min-h-[38vh] flex-1 items-end overflow-hidden lg:min-h-screen">
-        <div className="halo-hero absolute inset-0" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/30 to-transparent" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent to-bg/70 lg:to-bg" aria-hidden />
+      {/* hero — crafted aurora + a drawn halo, the climb */}
+      <div className="aurora grain relative flex min-h-[42vh] flex-1 items-end overflow-hidden lg:min-h-screen">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070a10] via-[#070a10]/10 to-transparent" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#070a10]/30 lg:to-[#070a10]/70" aria-hidden />
+        <div className="pointer-events-none absolute right-0 top-1/2 z-[1] -translate-y-1/2 opacity-95 lg:right-10 xl:right-24">
+          <Halo size={480} className="hidden max-w-[48vw] lg:block" />
+          <Halo size={250} className="lg:hidden" />
+        </div>
         <div className="relative z-10 max-w-xl p-8 lg:p-14">
-          <div className="font-mono text-lg font-bold tracking-[0.3em] text-ink">
-            HALO<span className="text-acc">{" // "}</span>VANTA
+          <div className="flex items-center gap-2.5">
+            <HaloMark size={26} />
+            <span className="text-lg font-semibold tracking-[0.24em] text-ink">HALO</span>
           </div>
-          <h1 className="mt-4 text-2xl font-semibold leading-tight text-ink sm:text-3xl">
-            One thing a day, until you can build the real thing.
+          <h1 className="mt-5 text-[26px] font-semibold leading-[1.15] text-ink sm:text-4xl">
+            One thing a day,<br className="hidden sm:block" /> until you can build the real thing.
           </h1>
-          <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-dim">
+          <p className="mt-4 max-w-md text-[13.5px] leading-relaxed text-dim">
             A patient climb from zero to embodied-intelligence research. You prove what you know;
             a tutor that remembers you fills the gaps. No streaks, no busywork.
           </p>

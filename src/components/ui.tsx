@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import type { NodeState, Tier } from "@/lib/types";
 
-export function Panel({ children, className = "", accent }: { children: ReactNode; className?: string; accent?: string }) {
+export function Panel({ children, className = "", accent, glass }: { children: ReactNode; className?: string; accent?: string; glass?: boolean }) {
   return (
     <div
-      className={`panel p-4 ${className}`}
-      style={accent ? { borderTop: `2px solid ${accent}` } : undefined}
+      className={`${glass ? "halo-glass rounded-2xl" : "panel"} p-4 ${className}`}
+      style={accent && !glass ? { borderTop: `2px solid ${accent}` } : undefined}
     >
       {children}
     </div>
@@ -18,8 +18,8 @@ export function Panel({ children, className = "", accent }: { children: ReactNod
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-2 flex items-center justify-between gap-3">
-      <div className="mono-label">{children}</div>
+    <div className="mb-2.5 flex items-center justify-between gap-3">
+      <div className="section-title">{children}</div>
       {right}
     </div>
   );
@@ -27,9 +27,9 @@ export function SectionTitle({ children, right }: { children: ReactNode; right?:
 
 export function Stat({ label, value, sub, accent }: { label: string; value: ReactNode; sub?: string; accent?: string }) {
   return (
-    <div className="panel px-4 py-3">
-      <div className="mono-label">{label}</div>
-      <div className="mt-1 font-mono text-2xl font-semibold" style={accent ? { color: accent } : undefined}>
+    <div className="panel px-4 py-3.5">
+      <div className="text-[11.5px] font-medium text-faint">{label}</div>
+      <div className="mt-1 text-3xl font-semibold tracking-tight tabular-nums" style={accent ? { color: accent } : undefined}>
         {value}
       </div>
       {sub && <div className="mt-0.5 text-xs text-dim">{sub}</div>}

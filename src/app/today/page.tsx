@@ -20,6 +20,15 @@ import { SmartText } from "@/components/SmartText";
 // ONE objective (HANDOVERFINAL §30): the current bottleneck, its capability
 // target, the next few packet steps — and nothing else above the fold.
 
+
+// turn drill-sergeant step labels ("WATCH — 12 min") into a calm human line
+function humanStep(label: string): string {
+  const m = label.replace("—", "·");
+  return m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()
+    .replace("prove it", "Prove it").replace("build / derive", "Build it")
+    .replace("read ", "Read ").replace("watch", "Watch").replace("recall", "Recall").replace("work", "Work");
+}
+
 export default function TodayPage() {
   const store = useStore();
   const data = store.exportData();
@@ -95,13 +104,13 @@ export default function TodayPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      {/* header — quiet */}
+      {/* header — a line a person reads, not a status code */}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="mono-label">
-          {phase ? phase.title.toLowerCase() : "getting started"}{day ? ` · d${Math.min(day, 210)}` : ""}
+        <div className="text-[13px] font-medium text-dim">
+          {phase ? phase.title : "Getting started"}{day ? <span className="text-faint"> · day {Math.min(day, 210)}</span> : null}
         </div>
-        <span className="font-mono text-[11px] text-faint">
-          {loggedMin > 0 ? `${(loggedMin / 60).toFixed(1)}h logged` : new Date().toDateString()}
+        <span className="text-[11.5px] text-faint">
+          {loggedMin > 0 ? `${(loggedMin / 60).toFixed(1)}h in today` : "one solid block is plenty"}
         </span>
       </div>
 
@@ -114,89 +123,98 @@ export default function TodayPage() {
       )}
 
       {bottleneck ? (
-        <Panel accent="#4dd6e8" className="!p-5">
-          <div className="mono-label text-acc">current bottleneck</div>
-          <h1 className="mt-1 text-xl font-bold tracking-tight">
-            <Link href={`/node/${bottleneck.id}`} className="hover:text-acc">{bottleneck.title}</Link>
-          </h1>
-          <div className="mt-3">
-            <div className="mono-label">today&apos;s capability target</div>
-            <p className="mt-0.5 text-[14px] leading-relaxed text-ink"><SmartText>{packet?.prove.task ?? bottleneck.masteryTest}</SmartText></p>
+        <div className="halo-glass rounded-2xl p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="halo-ring mt-1 size-8 shrink-0" aria-hidden />
+            <div>
+              <div className="text-[11.5px] font-medium text-acc">The one thing today</div>
+              <h1 className="mt-0.5 text-2xl font-semibold tracking-tight sm:text-3xl">
+                <Link href={`/node/${bottleneck.id}`} className="hover:text-acc">{bottleneck.title}</Link>
+              </h1>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="text-[12px] font-medium text-dim">By tonight, you&apos;ll be able to:</div>
+            <p className="mt-1 text-[14.5px] leading-relaxed text-ink"><SmartText>{packet?.prove.task ?? bottleneck.masteryTest}</SmartText></p>
           </div>
           <div className="mt-3">
-            <div className="mono-label">why now</div>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-dim">
+            <div className="text-[12px] font-medium text-dim">Why this first</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-dim">
               {bottleneck.why}{" "}
-              {nextUnlock && <span className="text-faint">Blocks: {nextUnlock.title}.</span>}
+              {nextUnlock && <span className="text-faint">It opens up {nextUnlock.title}.</span>}
             </p>
           </div>
 
-          {/* the steps — live from the packet runner's evidence */}
+          {/* the steps — the rising stairway of light */}
           {stepStates.length > 0 && (
-            <div className="mt-4 space-y-1.5">
+            <div className="relative mt-5 space-y-1.5 pl-4">
+              <div className="absolute bottom-3 left-[7px] top-3 w-px bg-gradient-to-t from-acc-robot/50 via-acc/40 to-acc/0" aria-hidden />
               {stepStates.map((s, i) => (
                 <Link
                   key={s.label}
                   href={`/node/${bottleneck.id}`}
-                  className="flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors"
-                  style={{
-                    borderColor: i === firstOpen ? "#4dd6e855" : "var(--color-line)",
-                    opacity: s.done ? 0.55 : i === firstOpen ? 1 : 0.75,
-                    background: i === firstOpen ? "#4dd6e80a" : "transparent",
-                  }}
+                  className="relative flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-panel2/60"
+                  style={{ opacity: s.done ? 0.6 : i === firstOpen ? 1 : 0.82 }}
                 >
-                  <span className="font-mono text-[11px]" style={{ color: s.done ? "#52d68a" : "#4dd6e8" }}>
-                    {s.done ? "✓" : String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className={`font-mono text-[12px] tracking-wide ${s.done ? "text-faint line-through" : "text-ink"}`}>
-                    {s.label}
+                  <span
+                    className="absolute -left-4 size-3.5 rounded-full border-2"
+                    style={{
+                      borderColor: s.done ? "#52d68a" : i === firstOpen ? "#4dd6e8" : "var(--color-line2)",
+                      background: s.done ? "#52d68a" : i === firstOpen ? "#4dd6e8" : "var(--color-bg)",
+                      boxShadow: i === firstOpen && !s.done ? "0 0 10px 0 #4dd6e8aa" : "none",
+                    }}
+                    aria-hidden
+                  />
+                  <span className={`text-[13px] ${s.done ? "text-faint line-through" : i === firstOpen ? "font-medium text-ink" : "text-dim"}`}>
+                    {humanStep(s.label)}
                   </span>
                 </Link>
               ))}
             </div>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href={`/node/${bottleneck.id}`} className="btn btn-acc">▶ Work the path</Link>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href={`/node/${bottleneck.id}`} className="btn btn-acc">Start &rarr;</Link>
             {hasLesson(bottleneck.id) && (
-              <Link href={`/learn/${bottleneck.id}`} className="btn">⚡ Lesson</Link>
+              <Link href={`/learn/${bottleneck.id}`} className="btn">Interactive lesson</Link>
             )}
           </div>
 
-          <div className="mt-4 border-t border-line/60 pt-3">
-            <div className="mono-label mb-1.5">stuck? ask — the tutor knows exactly where you are</div>
+          <div className="mt-5 border-t border-line/60 pt-4">
+            <div className="mb-2 text-[12px] font-medium text-dim">Stuck on any of it? Just ask — it knows where you are.</div>
             <LiveTutor nodeId={bottleneck.id} />
           </div>
 
           {nextUnlock && (
             <div className="mt-3 text-[11.5px] text-faint">
-              next unlock → <Link href={`/node/${nextUnlock.id}`} className="text-acc hover:underline">{nextUnlock.title}</Link>
+              finishing this opens → <Link href={`/node/${nextUnlock.id}`} className="text-acc hover:underline">{nextUnlock.title}</Link>
             </div>
           )}
-        </Panel>
+        </div>
       ) : (
-        <Panel accent="#4dd6e8" className="!p-5">
-          <div className="mono-label text-acc">boot</div>
-          <p className="mt-1 text-sm text-dim">
-            Set your start date in <Link href="/settings" className="text-acc hover:underline">Settings</Link>,
-            then open the first node — the system sequences everything from there.
+        <div className="halo-glass rounded-2xl p-6">
+          <div className="text-[16px] font-semibold">Let&apos;s pick your starting point</div>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-dim">
+            Set a start date in <Link href="/settings" className="text-acc hover:underline">Settings</Link>,
+            then open the first skill. From there it lays out what to do next, one thing at a time.
           </p>
-          <Link href="/tree" className="btn btn-acc mt-3">Open the tree</Link>
-        </Panel>
+          <Link href="/tree" className="btn btn-acc mt-4">Open the skill tree</Link>
+        </div>
       )}
 
       {/* secondary — collapsed rows, never competing with the bottleneck */}
       <div className="space-y-2">
         <SecondaryRow
           href="/review"
-          label={reviews.length > 0 ? `retrieval — ${reviews.length} due` : "retrieval — queue clear"}
+          label={reviews.length > 0 ? `Review · ${reviews.length} waiting` : "Review · all caught up"}
           hot={reviews.length > 0}
-          detail={reviews.length > 0 ? "Closed book first. Passing reviews is what verifies claims." : "Free recall: yesterday's key result."}
+          detail={reviews.length > 0 ? "Closed book first — a clean review is what makes a claim real." : "A quick recall of yesterday's key idea."}
         />
         {mission.slots.find((s) => s.projectTitle) && (
           <SecondaryRow
             href="/projects"
-            label={`project — ${mission.slots.find((s) => s.projectTitle)?.projectTitle}`}
+            label={`Project · ${mission.slots.find((s) => s.projectTitle)?.projectTitle}`}
             detail={mission.slots.find((s) => s.projectTitle)?.projectStep ?? ""}
           />
         )}
@@ -207,8 +225,8 @@ export default function TodayPage() {
             <SecondaryRow
               key={s.node!.id}
               href={`/node/${s.node!.id}`}
-              label={`parallel track — ${s.node!.title}`}
-              detail="Only after the bottleneck moved. Low cognitive interference by design."
+              label={`Also open · ${s.node!.title}`}
+              detail="Save this for after the main thing moves — less to juggle at once."
             />
           ))}
       </div>
