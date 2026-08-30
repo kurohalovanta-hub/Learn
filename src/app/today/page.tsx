@@ -198,7 +198,7 @@ export default function TodayPage() {
           </div>
 
           <div className="mt-5 border-t border-line/60 pt-4">
-            <div className="mb-2 text-[12px] font-medium text-dim">Stuck on any of it? Just ask — it knows where you are.</div>
+            <div className="mb-2 text-[12px] font-medium text-dim">Stuck on any of it? Just ask. It knows where you are.</div>
             <LiveTutor nodeId={bottleneck.id} />
           </div>
 

@@ -416,6 +416,8 @@ export interface Settings {
   researchModeOverride?: boolean;
   /** Beginner = calm, guided, minimal surface; Pro = the full toolkit. Default beginner. */
   experienceMode?: "beginner" | "pro";
+  /** Whole-UI zoom the learner sets (0.85–1.4). Scales text, cards, and spacing together. */
+  uiScale?: number;
   syncSecret?: string;
   updatedAt: number;
 }

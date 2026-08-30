@@ -6,18 +6,19 @@
   --font-display: var(--font-display), "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jbmono), ui-monospace, "SF Mono", monospace;
 
-  --color-bg: #0a0e14;
-  --color-panel: #0f141c;
-  --color-panel2: #131a24;
-  --color-ink: #d7dfe9;
-  --color-dim: #8b97a7;
-  --color-faint: #64707f;
-  --color-line: #1d2733;
-  --color-line2: #2a3646;
+  /* warm neutral dark — designed, not sci-fi blue-black */
+  --color-bg: #100f12;
+  --color-panel: #18171c;
+  --color-panel2: #201f26;
+  --color-ink: #ece9e6;
+  --color-dim: #9c9891;
+  --color-faint: #6c6862;
+  --color-line: #272530;
+  --color-line2: #37343f;
 
-  --color-acc: #4dd6e8; /* primary cyan */
-  --color-acc-code: #4dd6e8;
-  --color-acc-math: #e8b34d;
+  --color-acc: #5ec8d6; /* refined cyan-teal, calmer than neon */
+  --color-acc-code: #5ec8d6;
+  --color-acc-math: #e0a850;
   --color-acc-ml: #a78bfa;
   --color-acc-robot: #52d68a;
   --color-acc-learn: #f2934d;
@@ -54,8 +55,7 @@ h1, h2, .font-display {
 
 body {
   background:
-    radial-gradient(1200px 600px at 85% -10%, #10202b66 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, #1a142b55 0%, transparent 55%),
+    radial-gradient(1100px 560px at 88% -12%, #1c2a2d33 0%, transparent 62%),
     var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -64,16 +64,16 @@ body {
 }
 
 ::selection {
-  background: #4dd6e833;
+  background: color-mix(in oklab, var(--color-acc) 28%, transparent);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a3646 transparent;
+  scrollbar-color: var(--color-line2) transparent;
 }
 
 :focus-visible {
-  outline: 2px solid #4dd6e8aa;
+  outline: 2px solid color-mix(in oklab, var(--color-acc) 70%, transparent);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -83,18 +83,17 @@ body {
 .aurora {
   position: relative;
   overflow: hidden;
-  background: #070a10;
+  background: #0b0a0d;
 }
 .aurora::before {
   content: "";
   position: absolute;
   inset: -30%;
   background:
-    radial-gradient(40% 46% at 20% 28%, #4dd6e85e 0%, transparent 60%),
-    radial-gradient(38% 44% at 80% 22%, #7c6bff4d 0%, transparent 62%),
-    radial-gradient(52% 56% at 60% 88%, #2bb6c944 0%, transparent 64%),
-    radial-gradient(34% 40% at 14% 80%, #a855f733 0%, transparent 60%);
-  filter: blur(30px) saturate(1.3);
+    radial-gradient(42% 48% at 22% 30%, #2a6b7340 0%, transparent 62%),
+    radial-gradient(40% 46% at 80% 24%, #4a4a6e38 0%, transparent 64%),
+    radial-gradient(50% 54% at 60% 90%, #245a6230 0%, transparent 66%);
+  filter: blur(34px) saturate(1.05);
   animation: aurora-drift 24s ease-in-out infinite alternate;
 }
 @keyframes aurora-drift {
@@ -121,8 +120,8 @@ body {
 .brand-panel {
   position: relative;
   background:
-    linear-gradient(180deg, #ffffff08 0%, transparent 14%),
-    linear-gradient(165deg, #131a24 0%, #0f141c 100%);
+    linear-gradient(180deg, #ffffff06 0%, transparent 14%),
+    linear-gradient(165deg, var(--color-panel2) 0%, var(--color-panel) 100%);
   border: 1px solid var(--color-line);
   border-radius: 14px;
   box-shadow:
@@ -137,21 +136,21 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(70% 90% at 80% 0%, #4dd6e814 0%, transparent 60%);
+  background: radial-gradient(70% 90% at 80% 0%, color-mix(in oklab, var(--color-acc) 8%, transparent) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
 .brand-texture > * { position: relative; z-index: 1; }
 
 /* soft cyan glow for hero elements and the active step */
-.halo-glow { box-shadow: 0 0 0 1px #4dd6e824, 0 0 40px -8px #4dd6e855; }
+.halo-glow { box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-acc) 18%, transparent); }
 
 /* the signature animated ring — a thin cyan halo with a travelling node */
 .halo-ring {
   position: relative;
   border-radius: 50%;
   border: 1.5px solid #4dd6e8;
-  box-shadow: 0 0 18px -2px #4dd6e888, 0 0 0 1px #4dd6e820 inset;
+  box-shadow: 0 0 14px -3px color-mix(in oklab, var(--color-acc) 55%, transparent), 0 0 0 1px color-mix(in oklab, var(--color-acc) 14%, transparent) inset;
 }
 .halo-ring::after {
   content: "";
@@ -172,39 +171,35 @@ body {
 /* sidebar — a crafted Tier-1 surface, NO backdrop-filter (it's always painted) */
 .app-sidebar {
   position: relative;
-  background:
-    radial-gradient(420px 200px at 0% 0%, #4dd6e814, transparent 60%),
-    linear-gradient(180deg, #131a24f2, #0f141cf7);
-  box-shadow: inset -1px 0 0 #ffffff0d, 1px 0 40px -14px #4dd6e81f;
+  background: linear-gradient(180deg, var(--color-panel), var(--color-bg));
+  box-shadow: inset -1px 0 0 #ffffff0a;
 }
 
 /* current location in the nav: left light bar + directional wash + icon glow */
 .nav-active {
-  background: linear-gradient(90deg, #4dd6e81c, transparent 72%);
-  box-shadow: inset 2px 0 0 #4dd6e8, 0 0 22px -10px #4dd6e855;
-  color: var(--color-acc);
+  background: color-mix(in oklab, var(--color-acc) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-acc);
+  color: var(--color-ink);
 }
-.nav-active svg { filter: drop-shadow(0 0 5px #4dd6e877); }
+.nav-active svg { color: var(--color-acc); }
 
 /* glowing primary CTA */
 .btn-glow {
-  background: linear-gradient(180deg, #4dd6e83a, #4dd6e816);
-  border-color: #4dd6e866;
-  color: #d7f7fc;
-  box-shadow: inset 0 1px 0 #ffffff22, 0 10px 26px -12px #4dd6e866;
+  background: color-mix(in oklab, var(--color-acc) 18%, var(--color-panel2));
+  border-color: color-mix(in oklab, var(--color-acc) 45%, transparent);
+  color: var(--color-ink);
 }
-.btn-glow:hover { box-shadow: inset 0 1px 0 #ffffff33, 0 12px 30px -8px #4dd6e888; }
+.btn-glow:hover { background: color-mix(in oklab, var(--color-acc) 26%, var(--color-panel2)); }
 
 /* Tier-1 glassmorphism — frosted panel that reads as physical glass */
 .halo-glass {
-  background: linear-gradient(160deg, #131a2466 0%, #0f141c99 100%);
+  background: linear-gradient(160deg, color-mix(in oklab, var(--color-panel2) 70%, transparent) 0%, color-mix(in oklab, var(--color-panel) 88%, transparent) 100%);
   backdrop-filter: blur(18px) saturate(1.3);
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
   border: 1px solid #ffffff14;
   box-shadow:
-    0 1px 0 0 #ffffff1a inset,
-    0 24px 60px -20px #000000cc,
-    0 0 0 1px #4dd6e814;
+    0 1px 0 0 #ffffff12 inset,
+    0 20px 50px -24px #000000cc;
 }
 
 /* fine grid backdrop for the tree / login */
@@ -217,8 +212,8 @@ body {
 
 .panel {
   background:
-    linear-gradient(180deg, #ffffff07 0%, transparent 12%),
-    linear-gradient(165deg, #131a24 0%, #0f141c 100%);
+    linear-gradient(180deg, #ffffff06 0%, transparent 12%),
+    linear-gradient(165deg, var(--color-panel2) 0%, var(--color-panel) 100%);
   border: 1px solid var(--color-line);
   border-radius: 12px;
   box-shadow:
@@ -238,11 +233,11 @@ body {
 }
 .section-title::before {
   content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
   background: var(--color-acc);
-  box-shadow: 0 0 8px 0 #4dd6e8aa;
+  opacity: 0.85;
   flex: none;
 }
 

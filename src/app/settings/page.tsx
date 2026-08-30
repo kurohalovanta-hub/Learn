@@ -136,6 +136,40 @@ export default function SettingsPage() {
       </Panel>
 
       {/* tutor */}
+      {/* appearance — size the whole UI to taste */}
+      <Panel>
+        <SectionTitle>Appearance</SectionTitle>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-dim">Text &amp; layout size</span>
+              <span className="font-mono text-[12px] text-acc">{Math.round((store.settings.uiScale ?? 1) * 100)}%</span>
+            </div>
+            <input
+              type="range" min={0.85} max={1.4} step={0.05}
+              value={store.settings.uiScale ?? 1}
+              onChange={(e) => store.updateSettings({ uiScale: Number(e.target.value) })}
+              className="mt-2 w-full accent-[var(--color-acc)]"
+            />
+            <div className="mt-1 flex justify-between text-[10.5px] text-faint"><span>Compact</span><span>Comfortable</span><span>Large</span></div>
+          </div>
+          <div className="flex gap-1.5">
+            {([["Default", 1], ["Bigger", 1.15], ["Biggest", 1.3]] as const).map(([label, v]) => (
+              <button
+                key={label}
+                onClick={() => store.updateSettings({ uiScale: v })}
+                className={`rounded-md border px-2.5 py-1.5 text-[12px] transition-colors ${
+                  Math.abs((store.settings.uiScale ?? 1) - v) < 0.01 ? "border-acc/50 text-acc" : "border-line2 text-dim hover:text-ink"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="mt-2 text-[11.5px] text-faint">Scales everything together, so cards and spacing stay in proportion. Saved to your account.</p>
+      </Panel>
+
       <Panel accent="#52d68a">
         <SectionTitle>tutor</SectionTitle>
         <TutorStatusCard />

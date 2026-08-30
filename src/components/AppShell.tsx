@@ -79,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const uiScale = useStore((s) => s.settings.uiScale ?? 1);
 
   useEffect(() => {
     useStore.persist.rehydrate();
@@ -127,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <MobileTopBar onMenu={() => setDrawerOpen(true)} onSearch={() => setPaletteOpen(true)} />
         <main className="pb-tabbar px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:pb-6">
-          <div className="mx-auto max-w-[1400px]">{children}</div>
+          <div className="mx-auto max-w-[1400px]" style={{ zoom: uiScale }}>{children}</div>
         </main>
       </div>
       <MobileTabBar pathname={pathname} onMore={() => setDrawerOpen(true)} />
@@ -173,7 +174,7 @@ function DayChip() {
           research ? "bg-acc-frontier/15 text-acc-frontier" : "bg-acc/10 text-acc"
         }`}
       >
-        {research ? "RESEARCH" : `${verified}/${total} VERIFIED`}
+        {research ? "Research mode" : `${verified} of ${total} proven`}
       </span>
       {!research && day ? <span className="font-mono text-[10px] text-faint">d{Math.min(day, 210)}</span> : null}
     </span>

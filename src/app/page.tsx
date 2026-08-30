@@ -132,7 +132,7 @@ export default function Dashboard() {
       </Panel>
 
       {beginner ? (
-        <p className="px-1 text-[12.5px] text-faint">More views — progress, readiness, papers, the skill graph — appear here when you switch to Pro from the sidebar. For now, keep it simple.</p>
+        <p className="px-1 text-[12.5px] text-faint">More views (progress, readiness, papers, the skill graph) show up when you switch to Pro from the sidebar. For now, keep it simple.</p>
       ) : (
         <>
       {/* stats row */}

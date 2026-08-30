@@ -2,7 +2,7 @@
 
 // Tutor connection status. The happy path is per-account: connect YOUR Claude
 // or ChatGPT once, tutor works everywhere. Local Claude Code and a deployment
-// key are quieter fallbacks — never homework for the user.
+// key are quieter fallbacks, never homework for the user.
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -54,7 +54,7 @@ export function TutorStatusCard() {
     <div className="rounded-md border border-line bg-panel2/50 p-3">
       <div className="flex items-center gap-2">
         <span className="inline-block size-2 rounded-full" style={{ background: dot }} />
-        <span className="mono-label">your tutor</span>
+        <span className="text-[11px] font-medium text-faint">Your tutor</span>
         <button
           className="ml-auto font-mono text-[11px] text-dim underline-offset-2 hover:text-acc hover:underline"
           onClick={probe}
@@ -65,19 +65,19 @@ export function TutorStatusCard() {
       <div className="mt-1.5 text-[12.5px] leading-relaxed text-dim">
         {status.state === "checking" && "checking…"}
         {status.state === "connected" && (
-          <><b className="text-acc-robot">Live — running on {BACKEND_LABEL[status.backend]}.</b> Ask anything from Today or any node; every conversation is saved to your account.</>
+          <><b className="text-acc-robot">Live, running on {BACKEND_LABEL[status.backend]}.</b> Ask anything from Today or any node; every conversation is saved to your account.</>
         )}
         {status.state === "off" && status.reason === "sign-in" && (
           <><b className="text-warn">Sign in to wake your tutor.</b> It runs on the AI you connect to your account.</>
         )}
         {status.state === "off" && status.reason === "connect" && (
           <div className="space-y-2">
-            <div><b className="text-warn">One step left:</b> connect your Claude or ChatGPT and the tutor comes alive — here, on your phone, everywhere.</div>
+            <div><b className="text-warn">One step left:</b> connect your Claude or ChatGPT and the tutor comes alive, here, on your phone, everywhere.</div>
             <AIConnect compact />
           </div>
         )}
         {status.state === "off" && (status.reason === "no-key" || status.reason === "needs-accounts") && (
-          <><b className="text-warn">Tutor offline on this deployment.</b> Accounts have to be enabled first — then every user connects their own AI in <Link href="/settings" className="text-acc hover:underline">Settings</Link>.</>
+          <><b className="text-warn">Tutor offline on this deployment.</b> Accounts have to be enabled first, then every user connects their own AI in <Link href="/settings" className="text-acc hover:underline">Settings</Link>.</>
         )}
       </div>
     </div>
