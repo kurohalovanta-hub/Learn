@@ -165,11 +165,14 @@ function SharingPanel() {
   return (
     <Panel accent="#4dd6e8">
       <SectionTitle>Share your tutor</SectionTitle>
-      <p className="mb-3 text-[13px] leading-relaxed text-dim">
+      <p className="mb-2 text-[13px] leading-relaxed text-dim">
         Lend your Claude Code bridge to specific people. Their questions run on your subscription in safe, web-only
         mode; their progress and chats stay in their own accounts, never mixed with yours. Nothing on your machine
         changes. For this to stay safe, keep your bridge in normal mode, not full-control.
       </p>
+      <div className="mb-3 rounded-md border border-line bg-panel2/50 px-3 py-2 text-[12px] leading-relaxed text-faint">
+        The order: a person signs up at your site → they appear under <b className="text-dim">pending approval</b> below → you approve them → then add their username here. If nobody is listed to approve, nobody has signed up yet. Share your link (www.milanhalo.me) so they can register.
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <button

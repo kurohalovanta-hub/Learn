@@ -15,6 +15,7 @@ import { LoginGate } from "./LoginGate";
 import { HaloMark } from "./brand/Halo";
 import { NavIcon } from "./brand/icons";
 import { MasteryMomentHost } from "./MasteryMoment";
+import { Rundown } from "./Rundown";
 
 const SearchPalette = dynamic(() => import("./SearchPalette").then((m) => m.SearchPalette));
 
@@ -135,6 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {drawerOpen && <MobileDrawer pathname={pathname} onClose={() => setDrawerOpen(false)} />}
       {paletteOpen && <SearchPalette onClose={() => setPaletteOpen(false)} />}
       <MasteryMomentHost />
+      <Rundown />
     </div>
   );
 }
@@ -214,6 +216,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
+                  data-tour={item.href}
                   className={`mb-0.5 flex min-h-[38px] items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
                     active ? "nav-active" : "text-dim hover:bg-panel2/70 hover:text-ink"
                   }`}

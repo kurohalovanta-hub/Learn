@@ -168,6 +168,12 @@ export default function SettingsPage() {
           </div>
         </div>
         <p className="mt-2 text-[11.5px] text-faint">Scales everything together, so cards and spacing stay in proportion. Saved to your account.</p>
+        <button
+          className="btn mt-3 !py-1.5 text-xs"
+          onClick={() => window.dispatchEvent(new Event("halo-rundown-replay"))}
+        >
+          Replay the tour
+        </button>
       </Panel>
 
       <Panel accent="#52d68a">

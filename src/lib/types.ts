@@ -418,6 +418,8 @@ export interface Settings {
   experienceMode?: "beginner" | "pro";
   /** Whole-UI zoom the learner sets (0.85–1.4). Scales text, cards, and spacing together. */
   uiScale?: number;
+  /** The first-login guided tour has been completed (or skipped). */
+  rundownDone?: boolean;
   syncSecret?: string;
   updatedAt: number;
 }
