@@ -78,8 +78,7 @@ export default function Dashboard() {
           <div className="grid gap-2 text-sm text-dim md:grid-cols-3">
             <div>
               <span className="font-mono text-xs text-acc">01</span>{" "}
-              Read the <Link href="/guide" className="text-acc hover:underline">Field Manual</Link> — 5 minutes,
-              explains tiers, gates, and every screen.
+              The <Link href="/guide" className="text-acc hover:underline">Field Manual</Link> covers tiers, gates, and every screen in 5 minutes.
             </div>
             <div>
               <span className="font-mono text-xs text-acc">02</span>{" "}
@@ -162,7 +161,7 @@ export default function Dashboard() {
           </div>
           <div className="mt-4 border-t border-line pt-3">
             <div className="mono-label">rank {rank.index} · {rank.title}</div>
-            {nxt && <div className="mt-1 text-xs text-dim">Next: <b className="text-ink">{nxt.title}</b> — {nxt.requires}</div>}
+            {nxt && <div className="mt-1 text-xs text-dim">Next: <b className="text-ink">{nxt.title}</b> · {nxt.requires}</div>}
             <div className="mt-1 text-[11px] text-faint">score counts verified capability at full value; unverified claims at half</div>
           </div>
         </Panel>
@@ -211,7 +210,7 @@ export default function Dashboard() {
                 <span className="ml-2 text-xs text-faint">({currentPaper?.[1].status})</span>
               </Link>
             ) : (
-              <div className="text-sm text-faint">Nothing in flight — the ladder starts at Rung 1.</div>
+              <div className="text-sm text-faint">Nothing in flight yet. The ladder starts at Rung 1.</div>
             )}
           </div>
         </Panel>
@@ -237,7 +236,7 @@ export default function Dashboard() {
         <Panel>
           <SectionTitle right={<Link href="/tree" className="text-xs text-acc hover:underline">skill tree →</Link>}>Opens up next</SectionTitle>
           {nextUnlocks.length === 0 ? (
-            <EmptyState title="Nothing available — clear a gate" />
+            <EmptyState title="Clear a gate to open the next one" />
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {nextUnlocks.map(({ n, unlocks: u }) => (
