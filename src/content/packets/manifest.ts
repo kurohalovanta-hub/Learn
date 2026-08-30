@@ -1,6 +1,6 @@
 import type { PacketMeta } from "@/lib/packet-types";
 
-// Light metadata — safe to import anywhere. The validator cross-checks every
+// Light metadata, safe to import anywhere. The validator cross-checks every
 // entry against the actual packet module (registry.ts must stay in sync).
 export const PACKET_META: PacketMeta[] = [
   { nodeId: "l0-debug-mindset", minutes: 180 },

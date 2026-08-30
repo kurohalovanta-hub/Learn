@@ -8,7 +8,7 @@ import type { LearningPacket } from "@/lib/packet-types";
 export const packet: LearningPacket = {
   nodeId: "l12-vla-anatomy",
   whyNow:
-    "In 2026 the field converged on one skeleton: a VLM backbone kept close to its language pretraining, fusing image patches + instruction tokens + a proprio token, feeding an action decoder that emits chunked actions — with the decoder as the main design axis. Learn that template once, with tensor shapes rather than vibes, and every VLA paper for the rest of the program reads as a diff: roughly 80% is shared, and fluency is knowing the invariant and spotting the rest.",
+    "By 2026 almost every VLA shares one skeleton. A VLM backbone stays close to its language pretraining, takes in image patches, instruction tokens, and a proprio token, then feeds an action decoder that emits chunks of actions. The decoder is where systems really differ. Learn this template once, with real tensor shapes, and every later VLA paper reads as a small change on top of it. Most of it is shared, so fluency means knowing the shared part cold and spotting what each paper swaps.",
   diagnostic: {
     prompt:
       "Cold, 5 minutes, written: why keep the VLM close to its language pretraining? Name the three action-representation families and one system using each.",
@@ -19,20 +19,20 @@ export const packet: LearningPacket = {
       title: "π0 and π0-FAST: Vision-Language-Action Models for General Robot Control (HF blog)",
       url: "https://github.com/huggingface/blog/blob/main/pi0.md",
       sections:
-        "Complete: how VLAs differ from VLMs, the attention layout of robot policies, and FAST tokenization — the flow-expert vs autoregressive-token contrast in plain engineering prose.",
+        "Complete: how VLAs differ from VLMs, the attention layout of robot policies, and FAST tokenization, the flow-expert vs autoregressive-token contrast in plain engineering prose.",
       minutes: 20,
       whySelected:
-        "The missing plain-prose layer between the widget and the survey's formality — the two decoder families explained by the team that shipped both.",
+        "The plain-prose layer that sits between the widget and the survey's formality. It explains the two decoder families, written by the team that shipped both.",
     },
     {
       title: "A Survey on VLA Models: An Action Tokenization Perspective (Zhong et al.)",
       url: "https://arxiv.org/abs/2507.01925",
       resourceId: "awesome-vla-2026",
       sections:
-        "Taxonomy sections + system tables — STUDY as the map, skim the per-paper detail. As you read, actively fill your own design-axes table (tokenization × head × co-training) for π0, OpenVLA, RT-2, SmolVLA, GR00T.",
+        "Taxonomy sections + system tables, STUDY as the map, skim the per-paper detail. As you read, actively fill your own design-axes table (tokenization × head × co-training) for π0, OpenVLA, RT-2, SmolVLA, GR00T.",
       minutes: 90,
       whySelected:
-        "The organizing taxonomy: what the 'action token' is — language plan, trajectory, latent, or raw-action families. Read AFTER the widget so the map lands on territory you have touched.",
+        "The taxonomy that organizes everything: what the 'action token' is, across the language-plan, trajectory, latent, and raw-action families. Read it after the widget so the map lands on ground you have already walked.",
     },
   ],
   recall: [
@@ -53,7 +53,7 @@ export const packet: LearningPacket = {
       a: "Same backbone, different decoder: π0 samples continuous action chunks from a flow-matching action expert; π0-FAST autoregressively emits discrete FAST tokens from the VLM itself.",
     },
     {
-      q: "Chunking and async inference — style or necessity?",
+      q: "Chunking and async inference, style or necessity?",
       a: "Necessity: 3 cameras at 224² with 50 Hz control cannot be served by synchronous per-step VLM inference. One forward pass amortized over a chunk, plus async execution, is forced by the latency budget (SmolVLA: ~30% faster response, ~2× task throughput).",
     },
   ],
@@ -62,7 +62,7 @@ export const packet: LearningPacket = {
   practice: [
     {
       prompt:
-        "First, the in-app lesson's why/drive sections with the vla-flow instrument: tap every block, read every tensor shape, and flip the flow-expert ↔ FAST-tokens toggle until the invariance registers — the decoder swaps, the skeleton doesn't.",
+        "Start with the in-app lesson's why and drive sections using the vla-flow tool. Tap every block, read every tensor shape, and flip the flow-expert to FAST-tokens toggle back and forth until the pattern sinks in. The decoder swaps out; the skeleton stays the same.",
       minutes: 15,
     },
     {
@@ -72,12 +72,12 @@ export const packet: LearningPacket = {
     },
     {
       prompt:
-        "The latency-budget worksheet: 3 cameras × 224² inputs at 50 Hz control — count tokens, estimate the per-step forward cost, show where the time goes, and conclude why chunking + async execution exist. Check your arithmetic against SmolVLA's published async numbers (~30% response, ~2× throughput).",
+        "Work the latency-budget worksheet: 3 cameras at 224² inputs with 50 Hz control. Count the tokens, estimate the per-step forward cost, show where the time goes, and work out why chunking and async execution have to exist. Check your arithmetic against SmolVLA's published async numbers (~30% response, ~2× throughput).",
       minutes: 25,
     },
   ],
   implement: {
-    spec: "The node's two artifacts: (1) the filled design-axes table — tokenization × action head × co-training — for π0, OpenVLA, RT-2, SmolVLA, GR00T, with one line of evidence per cell; (2) a one-page 'convergent recipe' memo in your own words: the invariant skeleton, the decoder as the one real design axis, and what knowledge insulation, dual-system splits, and latency constraints each protect.",
+    spec: "You will produce two things. (1) A filled design-axes table (tokenization, action head, co-training) for π0, OpenVLA, RT-2, SmolVLA, GR00T, with one line of evidence in each cell. (2) A one-page memo in your own words on the convergent recipe: the skeleton that stays fixed, the decoder as the one real place systems differ, and what knowledge insulation, dual-system splits, and latency limits each protect.",
     checks: [
       "Every table cell cites where it came from (survey table or blog post)",
       "The memo names the invariant without leaning on any single paper's trivia",
@@ -93,7 +93,7 @@ export const packet: LearningPacket = {
         "The whole anatomy at 450M: SmolVLM2 backbone + ~100M flow-matching action expert, layer skipping (attend to VLM features up to ~half depth), async inference",
       minutes: 25,
     },
-    note: "If the generic diagram won't come from memory, study this smallest complete instance — every component fits in your head — then re-attempt the diagram before returning to the survey.",
+    note: "If the generic diagram won't come from memory, study this smallest complete instance (every part fits in your head), then try the diagram again before you go back to the survey.",
   },
   deepen: [
     {
@@ -101,33 +101,33 @@ export const packet: LearningPacket = {
       url: "https://github.com/Physical-Intelligence/openpi",
       resourceId: "openpi",
       sections:
-        "Config → model classes only: the anatomy as code (π0 flow / π0-FAST autoregressive / π0.5 with knowledge insulation; note the norm-stats step and the policy-server split). A skim — studying it is l12-pi0-flow's job.",
+        "Config → model classes only: the anatomy as code (π0 flow / π0-FAST autoregressive / π0.5 with knowledge insulation; note the norm-stats step and the policy-server split). A skim, studying it is l12-pi0-flow's job.",
       minutes: 45,
     },
     {
-      title: "Survey 2507.01925 — related-work graph",
+      title: "Survey 2507.01925, related-work graph",
       url: "https://arxiv.org/abs/2507.01925",
       resourceId: "awesome-vla-2026",
       sections:
-        "The related-work graph for whichever design axis felt thinnest. The RT-2 / OpenVLA / π0 papers themselves are NOT this node — they are l12-rt-lineage, l12-openvla-code, l12-pi0-flow, and no AI summary substitutes for reading them there.",
+        "The related-work graph for whichever design axis felt thinnest. The RT-2 / OpenVLA / π0 papers themselves are NOT this node, they are l12-rt-lineage, l12-openvla-code, l12-pi0-flow, and no AI summary substitutes for reading them there.",
       minutes: 30,
     },
   ],
   prove: {
-    task: "The node's mastery test: whiteboard reconstruction, from memory, of the full π0-class anatomy — every block, with a concrete tensor shape at every arrow — plus your 5-system design-axes table rebuilt blind.",
+    task: "The mastery test: on a whiteboard, from memory, reconstruct the full π0-class anatomy. Draw every block with a concrete tensor shape at every arrow, then rebuild your 5-system design-axes table blind.",
     criteria: [
-      "Every arrow carries a shape and the shapes compose — arithmetic recognition can't fake",
-      "The decoder is drawn as the swap point, with all three families placeable there",
+      "Every arrow carries a shape, and the shapes compose (you can't fake that by recognizing the arithmetic)",
+      "The decoder is drawn as the swap point, with all three families able to sit there",
       "The table is correct from memory for all 5 systems across all three axes",
       "Two sentences, cold: what knowledge insulation protects, and what forces chunking",
     ],
     minutes: 30,
   },
   transfer: {
-    task: "Pick one system NOT in your table from LeRobot's policies directory listing (e.g. molmoact2 or vla_jepa) and place it in the taxonomy from its docs/README alone, in at most 15 minutes — the 'every paper is a diff' skill exercised on an unseen system.",
+    task: "Pick one system that's not in your table from LeRobot's policies directory listing (for example molmoact2 or vla_jepa) and place it in the taxonomy using only its docs or README, in 15 minutes or less. This is the 'every paper is a diff' skill, run on a system you have not seen.",
     criteria: [
       "Placed on all three axes with evidence quoted from its own docs",
-      "Done inside the 15-minute box — this is fluency, not research",
+      "Done inside the 15-minute box, this is fluency, not research",
     ],
     minutes: 15,
   },

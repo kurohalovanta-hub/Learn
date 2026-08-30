@@ -134,7 +134,7 @@ export function LoginGate() {
               <button
                 type="submit"
                 disabled={busy || !username || !password}
-                className="btn btn-acc w-full justify-center !py-2.5 disabled:opacity-40"
+                className="btn btn-glow w-full justify-center !py-2.5 disabled:opacity-40"
               >
                 {busy ? "…" : firstRun ? "Create my account" : mode === "login" ? "Sign in" : "Ask to join"}
               </button>

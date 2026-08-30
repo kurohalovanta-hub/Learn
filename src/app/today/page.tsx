@@ -191,7 +191,7 @@ export default function TodayPage() {
           )}
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link href={`/node/${bottleneck.id}`} className="btn btn-acc">Start &rarr;</Link>
+            <Link href={`/node/${bottleneck.id}`} className="btn btn-glow">Start &rarr;</Link>
             {hasLesson(bottleneck.id) && (
               <Link href={`/learn/${bottleneck.id}`} className="btn">Interactive lesson</Link>
             )}

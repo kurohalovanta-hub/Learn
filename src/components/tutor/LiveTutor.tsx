@@ -367,7 +367,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
           className="font-mono text-[11px] text-dim underline-offset-2 hover:text-acc hover:underline"
           onClick={() => setLabOpen(!labOpen)}
         >
-          {labOpen ? "▾ code lab" : "▸ code lab — write python, run it for real, get it reviewed"}
+          {labOpen ? "▾ code lab" : "▸ Code lab · write Python, run it for real, get it reviewed"}
         </button>
         {messages.length > 1 && (
           <span className="ml-auto flex items-center gap-3">

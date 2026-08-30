@@ -1,6 +1,6 @@
 import type { LearningPacket } from "@/lib/packet-types";
 
-// Dynamic imports — each packet loads only on its own node page.
+// Dynamic imports, each packet loads only on its own node page.
 export const PACKET_REGISTRY: Record<string, () => Promise<{ packet: LearningPacket }>> = {
   "l0-debug-mindset": () => import("./l0-debug-mindset"),
   "l0-editor": () => import("./l0-editor"),

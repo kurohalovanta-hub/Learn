@@ -66,7 +66,7 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2">
             <Link href="/guide" className="btn">Field manual</Link>
-            <Link href="/today" className="btn btn-acc">Start today &rarr;</Link>
+            <Link href="/today" className="btn btn-glow">Start today &rarr;</Link>
           </div>
         </div>
       </div>
