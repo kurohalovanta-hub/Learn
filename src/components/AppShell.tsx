@@ -12,6 +12,8 @@ import { dayOfProgram } from "@/lib/engine/pacing";
 import { NODES } from "@/content/nodes";
 import { currentRank } from "@/lib/engine/mastery";
 import { LoginGate } from "./LoginGate";
+import { HaloMark } from "./brand/Halo";
+import { NavIcon } from "./brand/icons";
 import { MasteryMomentHost } from "./MasteryMoment";
 
 const SearchPalette = dynamic(() => import("./SearchPalette").then((m) => m.SearchPalette));
@@ -140,9 +142,7 @@ function BootScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
-        <div className="font-mono text-sm font-bold tracking-[0.3em] text-dim">
-          HALO<span className="text-acc">{" // "}</span>VANTA
-        </div>
+        <div className="flex items-center justify-center gap-2 opacity-90"><HaloMark size={22} /><span className="text-[15px] font-semibold tracking-[0.12em] text-ink">Halo</span></div>
         <div className="mt-3 flex justify-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <span
@@ -180,6 +180,23 @@ function DayChip() {
   );
 }
 
+const ICON_FOR: Record<string, string> = {
+  "/": "dashboard", "/today": "today", "/tree": "tree", "/levels": "levels",
+  "/projects": "projects", "/bosses": "boss", "/labs": "labs", "/papers": "papers",
+  "/experiments": "experiments", "/ideas": "ideas", "/frontier": "frontier", "/agent": "agent",
+  "/review": "review", "/weekly": "weekly", "/guide": "guide", "/settings": "settings", "/admin": "admin",
+};
+const SECTION_NAME: Record<string, string> = { operate: "Your day", build: "Build", research: "Research", system: "System" };
+
+function Wordmark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <HaloMark size={20} />
+      <span className="text-[15px] font-semibold tracking-[0.12em] text-ink">Halo</span>
+    </span>
+  );
+}
+
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   const isAdmin = useAuth((s) => s.user?.role === "admin");
   return (
@@ -189,7 +206,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
         if (!items.length) return null;
         return (
           <div key={g.section}>
-            <div className="mono-label mt-4 mb-1 px-2 first:mt-0">{g.section}</div>
+            <div className="mb-1 mt-5 px-2.5 text-[11px] font-medium tracking-wide text-faint first:mt-0">{SECTION_NAME[g.section] ?? g.section}</div>
             {items.map((item) => {
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
@@ -197,11 +214,11 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  className={`mb-0.5 flex min-h-[38px] items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
-                    active ? "bg-acc/10 text-acc" : "text-dim hover:bg-panel2 hover:text-ink"
+                  className={`mb-0.5 flex min-h-[38px] items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
+                    active ? "nav-active" : "text-dim hover:bg-panel2/70 hover:text-ink"
                   }`}
                 >
-                  <span aria-hidden className="w-4 text-center font-mono text-xs opacity-80">{item.icon}</span>
+                  <NavIcon name={ICON_FOR[item.href] ?? "dashboard"} className={active ? "text-acc" : "text-faint"} />
                   {item.label}
                 </Link>
               );
@@ -220,13 +237,11 @@ function Sidebar({ pathname, onSearch }: { pathname: string; onSearch: () => voi
   const user = useAuth((s) => s.user);
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-panel/60 backdrop-blur lg:flex">
+    <aside className="app-sidebar sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line lg:flex">
       <div className="border-b border-line px-5 py-5">
         <Link href="/" className="block">
-          <div className="font-mono text-[13px] font-bold tracking-[0.25em] text-ink">
-            HALO<span className="text-acc">{" // "}</span>VANTA
-          </div>
-          <div className="mt-1 text-[11px] text-faint">PROJECT : VANTA HALO</div>
+          <Wordmark />
+          <div className="mt-1.5 text-[11px] text-faint">Your climb to mastery</div>
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <DayChip />
@@ -246,9 +261,9 @@ function Sidebar({ pathname, onSearch }: { pathname: string; onSearch: () => voi
           <span>Search…</span>
           <kbd className="rounded border border-line2 px-1 font-mono text-[10px]">/</kbd>
         </button>
-        <div className="mono-label">rank {rank.index}</div>
+        <div className="text-[11px] font-medium text-faint">Rank {rank.index}</div>
         <div className="text-[13px] font-medium text-ink">{rank.title}</div>
-        <div className="mt-1 font-mono text-[11px] text-acc-robot">{verifiedCount} verified capabilit{verifiedCount === 1 ? "y" : "ies"}</div>
+        <div className="mt-1 text-[11px] text-acc-robot">{verifiedCount} skill{verifiedCount === 1 ? "" : "s"} proven</div>
       </div>
     </aside>
   );
@@ -260,9 +275,7 @@ function MobileTopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () =
       <button aria-label="Menu" onClick={onMenu} className="btn-ghost btn !min-h-[40px] !px-3">
         ☰
       </button>
-      <Link href="/" className="min-w-0 flex-1 text-center font-mono text-[12px] font-bold tracking-[0.22em]">
-        HALO<span className="text-acc">{" // "}</span>VANTA
-      </Link>
+      <Link href="/" className="flex min-w-0 flex-1 items-center justify-center"><Wordmark /></Link>
       <DayChip />
       <button aria-label="Search" onClick={onSearch} className="btn-ghost btn !min-h-[40px] !px-3 font-mono">
         /
@@ -285,7 +298,7 @@ function MobileTabBar({ pathname, onMore }: { pathname: string; onMore: () => vo
                 active ? "text-acc" : "text-faint"
               }`}
             >
-              <span aria-hidden className="font-mono text-[15px]">{t.icon}</span>
+              <NavIcon name={t.href === "/" ? "base" : t.href === "/tree" ? "tree" : t.href === "/today" ? "today" : "review"} size={18} />
               {t.label}
             </Link>
           );
@@ -294,7 +307,7 @@ function MobileTabBar({ pathname, onMore }: { pathname: string; onMore: () => vo
           onClick={onMore}
           className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-faint"
         >
-          <span aria-hidden className="font-mono text-[15px]">⋯</span>
+          <span aria-hidden className="text-[18px] leading-none">···</span>
           More
         </button>
       </div>
@@ -312,9 +325,7 @@ function MobileDrawer({ pathname, onClose }: { pathname: string; onClose: () => 
       <div className="rise-in absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-line bg-panel">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div>
-            <div className="font-mono text-[12px] font-bold tracking-[0.22em]">
-              HALO<span className="text-acc">{" // "}</span>VANTA
-            </div>
+            <Wordmark />
             <div className="mt-0.5 text-[11px] text-faint">
               {user ? `@${user.username} · ` : ""}rank {rank.index} · {rank.title}
             </div>

@@ -161,6 +161,32 @@ body {
 @keyframes halo-orbit { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .halo-ring::after { animation: none; } }
 
+/* sidebar — a crafted Tier-1 surface, NO backdrop-filter (it's always painted) */
+.app-sidebar {
+  position: relative;
+  background:
+    radial-gradient(420px 200px at 0% 0%, #4dd6e814, transparent 60%),
+    linear-gradient(180deg, #131a24f2, #0f141cf7);
+  box-shadow: inset -1px 0 0 #ffffff0d, 1px 0 40px -14px #4dd6e81f;
+}
+
+/* current location in the nav: left light bar + directional wash + icon glow */
+.nav-active {
+  background: linear-gradient(90deg, #4dd6e81c, transparent 72%);
+  box-shadow: inset 2px 0 0 #4dd6e8, 0 0 22px -10px #4dd6e855;
+  color: var(--color-acc);
+}
+.nav-active svg { filter: drop-shadow(0 0 5px #4dd6e877); }
+
+/* glowing primary CTA */
+.btn-glow {
+  background: linear-gradient(180deg, #4dd6e83a, #4dd6e816);
+  border-color: #4dd6e866;
+  color: #d7f7fc;
+  box-shadow: inset 0 1px 0 #ffffff22, 0 10px 26px -12px #4dd6e866;
+}
+.btn-glow:hover { box-shadow: inset 0 1px 0 #ffffff33, 0 12px 30px -8px #4dd6e888; }
+
 /* Tier-1 glassmorphism — frosted panel that reads as physical glass */
 .halo-glass {
   background: linear-gradient(160deg, #131a2466 0%, #0f141c99 100%);

@@ -41,18 +41,21 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      {/* header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* header — a cinematic glass band with a level-tinted glow */}
+      <div
+        className="halo-glass relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-2xl p-5 sm:p-6"
+        style={{ backgroundImage: `radial-gradient(60% 120% at 100% 0%, ${level.accent}1f 0%, transparent 55%)` }}
+      >
         <div className="min-w-0">
-          <div className="mono-label">
-            <Link href={`/levels/${node.level}`} className="hover:text-acc" style={{ color: level.accent }}>
-              L{node.level} · {level.title}
+          <div className="text-[12px] font-medium">
+            <Link href={`/levels/${node.level}`} className="hover:underline" style={{ color: level.accent }}>
+              Level {node.level} · {level.title}
             </Link>
-            <span className="ml-2">{node.track}</span>
-            {node.optional && <span className="ml-2 text-acc-math">stretch</span>}
+            <span className="ml-2 text-dim">{node.track}</span>
+            {node.optional && <span className="ml-2 text-acc-math">optional</span>}
           </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">{node.title}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight sm:text-3xl">{node.title}</h1>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <StateBadge state={state} />
             {p && p.tier !== "none" && <TierBadge tier={p.tier} />}
             {p?.verified && <span className="rounded bg-acc-robot/15 px-1.5 py-0.5 font-mono text-[10px] text-acc-robot">✓ verified</span>}
@@ -66,7 +69,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
           </div>
           {unverifiedPrereqs.length > 0 && (
             <div className="mt-1 text-[11px] text-faint">
-              built on unverified: {unverifiedPrereqs.slice(0, 3).join(" · ")}
+              still shaky underneath: {unverifiedPrereqs.slice(0, 3).join(" · ")}
               {unverifiedPrereqs.length > 3 ? ` +${unverifiedPrereqs.length - 3}` : ""}
             </div>
           )}
@@ -88,14 +91,14 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
 
       {/* why */}
       <Panel accent={level.accent}>
-        <SectionTitle>why now</SectionTitle>
+        <SectionTitle>Why this is worth your time</SectionTitle>
         <p className="text-[14px] leading-relaxed text-ink"><SmartText>{pk.whyNow}</SmartText></p>
       </Panel>
 
       {/* repair-class nodes lead with the test-out (Δ1: test out first, patch only gaps) */}
       {pk.diagnostic?.repair && (
         <Panel accent="#e8b34d">
-          <SectionTitle>test out first — only patch what breaks</SectionTitle>
+          <SectionTitle>Test out first — only fix what breaks</SectionTitle>
           <p className="text-sm leading-relaxed text-dim"><SmartText>{pk.diagnostic.prompt}</SmartText></p>
           <p className="mt-1 mb-2 text-[11px] text-faint">
             ~{pk.diagnostic.minutes} min. Pass → skip this node. Everything below is only for
@@ -109,7 +112,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
         <div className="space-y-5 lg:col-span-2">
           {/* objectives */}
           <Panel>
-            <SectionTitle>learning objectives</SectionTitle>
+            <SectionTitle>What you&apos;ll be able to do</SectionTitle>
             <ul className="space-y-1.5">
               {node.objectives.map((o, i) => (
                 <li key={i} className="flex gap-2 text-sm text-ink">
@@ -120,7 +123,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
             </ul>
             {node.skip && node.skip.length > 0 && (
               <div className="mt-3 border-t border-line pt-2">
-                <div className="mono-label mb-1">explicitly skip</div>
+                <div className="mb-1 text-[11px] font-medium text-faint">Skip these</div>
                 {node.skip.map((s, i) => (
                   <div key={i} className="text-xs text-faint">⊘ {s}</div>
                 ))}
@@ -131,7 +134,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
           {/* equations */}
           {node.equations && node.equations.length > 0 && (
             <Panel>
-              <SectionTitle>equations to own</SectionTitle>
+              <SectionTitle>The equations you&apos;ll actually use</SectionTitle>
               <div className="space-y-2 rounded-md bg-panel2 p-3">
                 {node.equations.map((eq, i) => (
                   <Katex key={i} tex={eq} block />
@@ -142,14 +145,14 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
 
           {/* the academy path (§19) */}
           <div>
-            <div className="mono-label mb-2">the path — one step at a time</div>
+            <div className="section-title mb-2.5">Your path — one step at a time</div>
             <PacketRunner packet={pk} curated={curated} />
           </div>
 
           {/* misconceptions */}
           {node.misconceptions && node.misconceptions.length > 0 && (
             <Panel>
-              <SectionTitle>common misconceptions</SectionTitle>
+              <SectionTitle>Where people trip up</SectionTitle>
               {node.misconceptions.map((m, i) => (
                 <div key={i} className="text-sm text-dim">✗ {m}</div>
               ))}
@@ -159,7 +162,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
           {/* boss extras */}
           {boss && (
             <Panel accent="#f4586e">
-              <SectionTitle>boss scenario</SectionTitle>
+              <SectionTitle>The test that proves it</SectionTitle>
               <p className="text-sm text-ink">{boss.scenario}</p>
               <div className="mono-label mt-3 mb-1">pass criteria</div>
               <ul className="space-y-1">
@@ -189,7 +192,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
         {/* sidebar */}
         <div className="space-y-5">
           <Panel>
-            <SectionTitle>prerequisites</SectionTitle>
+            <SectionTitle>Comes before this</SectionTitle>
             {node.prereqs.length === 0 ? (
               <div className="text-sm text-faint">None — a root node.</div>
             ) : (
@@ -214,7 +217,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
           </Panel>
 
           <Panel>
-            <SectionTitle>unlocks</SectionTitle>
+            <SectionTitle>Opens up next</SectionTitle>
             {dependents.length === 0 ? (
               <div className="text-sm text-faint">Terminal node.</div>
             ) : (
@@ -228,7 +231,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
 
           {(node.projectIds?.length || node.paperIds?.length) && (
             <Panel>
-              <SectionTitle>connections</SectionTitle>
+              <SectionTitle>Related work</SectionTitle>
               {node.projectIds?.map((pid) => {
                 const proj = projectById(pid);
                 return proj ? (
@@ -250,7 +253,7 @@ export function NodeView({ id, packet }: { id: string; packet?: LearningPacket |
 
           {node.computeNote && (
             <Panel>
-              <SectionTitle>compute</SectionTitle>
+              <SectionTitle>Compute you&apos;ll need</SectionTitle>
               <p className="text-xs text-dim">{node.computeNote}</p>
             </Panel>
           )}

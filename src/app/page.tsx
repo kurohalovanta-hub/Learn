@@ -103,8 +103,8 @@ export default function Dashboard() {
         {mission.slots.length > 0 ? (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {mission.slots.filter((s) => s.node || s.projectTitle || s.reviewCount != null).slice(0, 6).map((s, i) => (
-              <div key={i} className="rounded-md border border-line bg-panel2 px-3 py-2">
-                <div className="mono-label">{s.label} · {s.minutes}m</div>
+              <div key={i} className="rounded-lg border border-line bg-panel2/70 px-3 py-2.5 transition-colors hover:border-line2">
+                <div className="text-[11px] font-medium text-faint">{s.label} · {s.minutes} min</div>
                 {s.node ? (
                   <Link href={`/node/${s.node.id}`} className="mt-0.5 block truncate text-[13px] text-ink hover:text-acc">
                     {s.node.title}
@@ -170,7 +170,7 @@ export default function Dashboard() {
         {/* level progress */}
         <Panel className="lg:col-span-2">
           <SectionTitle right={<Link href="/levels" className="text-xs text-acc hover:underline">all levels →</Link>}>
-            level progress {pace && <span className="ml-2 normal-case tracking-normal" style={{ color: pace.verdict === "far-behind" ? "#f4586e" : pace.verdict === "behind" ? "#e8b34d" : "#52d68a" }}>
+            Level progress {pace && <span className="ml-2 normal-case tracking-normal" style={{ color: pace.verdict === "far-behind" ? "#f4586e" : pace.verdict === "behind" ? "#e8b34d" : "#52d68a" }}>
               · {pace.verdict}{pace.drift < 0 ? ` (${-pace.drift}d)` : ""}
             </span>}
           </SectionTitle>

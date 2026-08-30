@@ -250,7 +250,7 @@ export function LiveTutor({ nodeId, bottleneck }: { nodeId: string; bottleneck?:
       <div className="mb-2 flex items-center gap-2.5">
         <TeacherAvatar state={avatarState} />
         <div className="min-w-0 flex-1">
-          <div className="mono-label">resident tutor · live</div>
+          <div className="text-[11px] font-medium text-acc">Your tutor · live</div>
           <div className="truncate text-[11.5px] text-faint">
             {streaming
               ? (speaking ? "explaining…" : "thinking…")
