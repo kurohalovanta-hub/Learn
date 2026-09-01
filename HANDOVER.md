@@ -40,7 +40,7 @@ no button anywhere that sets a mastery tier.
 | Learning packets (42) | ✅ Shipped |
 | Packet runner / academy UI | ✅ Shipped |
 | AI-tutor bridge | ✅ Shipped |
-| Auth system (code) | ✅ Complete and correct — **never run against a real Redis** |
+| Auth system (code) | ✅ Complete; full lifecycle passed 30/30 against a local Upstash-compatible shim — **not yet run against real Upstash/production** |
 | **Accounts working live** | ❌ **BLOCKED — no Redis attached to the deployment** |
 | Vercel project existence | ❓ **UNVERIFIED** — see §6 |
 | Packet coverage tranche 2 | ⬜ Backlog (L3–L9 depth, L13–L16) |
@@ -206,15 +206,34 @@ public domain, anyone who loads the site between step 3 and your registration ca
   This repo is public. (A previous session was offered the password and correctly refused
   to hardcode it. Keep that rule.)
 
-### 5.5 If someone else got the admin slot
-Delete the stray user from Redis (remove its `user:<name>` key and drop it from the
-`users` set), then register again. Then consider the `ADMIN_SETUP_TOKEN` hardening in §9.
+### 5.5 If someone else got the admin slot, or you just want a clean slate
+Use the break-glass wipe (single-learner reset): set `ADMIN_RESET_TOKEN` in Vercel
+(≥16 chars, `openssl rand -hex 24`), redeploy, then
 
-### 5.6 Production smoke test — NEVER RUN, do this first
+```bash
+curl -X POST https://milanhalo.me/api/auth/recover -H 'content-type: application/json' \
+  -d '{"token":"<the token>","action":"wipe-users"}'
+```
 
-The auth code has been read and type-checked but **has never executed against a live
-Redis**, because no session ever had one. Recorded as deferred in
-`docs/recalibration/08-post-implementation-review.md` (pass P9). Run all of it:
+Every account is deleted (progress blobs kept unless you add `"wipeProgress":true`), so
+the **next registration becomes admin**. Register immediately, then unset the token and
+redeploy. Full runbook: `docs/recalibration/RECOVERY.md` §1c.
+
+### 5.5b Password reset is now self-service
+- Signed in: **Settings → password & recovery** — change password (needs the current one;
+  signs out other devices) and **generate a one-time recovery code**.
+- Locked out: sign-in screen → **Forgot your password?** → username + recovery code + new
+  password. Hashed at rest, single-use, rate-limited.
+- Admin can reset anyone from `/admin`. `ADMIN_RESET_TOKEN` stays as the last resort.
+
+### 5.6 Production smoke test — do this first
+
+Status: the complete lifecycle (first-boot admin → recovery code → change password →
+sign-out → forgot-password with wrong then right code → single-use → second user pending
+→ approve → non-admin blocked → wipe-users → re-register as admin with progress intact →
+wipe with progress) **passed 30/30 in a real browser against a local Upstash-compatible
+shim** (2026-08-21). It has **not** run against real Upstash or the production
+deployment. Run this checklist there once:
 
 1. Register first account → assert `role:"admin"`, `approved:true`, auto-signed-in.
 2. Reload → session persists (cookie survives).

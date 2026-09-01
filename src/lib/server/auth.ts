@@ -20,6 +20,10 @@ export interface UserRecord {
   approved: boolean;
   sv: number; // session version — bump to revoke all sessions
   createdAt: number;
+  // one-time recovery code (hashed at rest, shown to the user exactly once)
+  recoveryHash?: string;
+  recoverySalt?: string;
+  recoveryCreatedAt?: number;
 }
 
 const USER_KEY = (u: string) => `user:${u}`;
@@ -57,6 +61,27 @@ export async function verifyPassword(password: string, user: UserRecord): Promis
   const { hash } = await hashPassword(password, user.salt);
   const a = Buffer.from(hash, "hex");
   const b = Buffer.from(user.hash, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// ── recovery codes (no email infra by design — ADR-004 / recalibration 05) ──
+// 128 bits of entropy, grouped for legibility. Stored only as a scrypt hash, so a
+// Redis dump never reveals a usable code. Single use: consuming it clears it.
+export function generateRecoveryCode(): string {
+  const hex = randomBytes(16).toString("hex").toUpperCase();
+  return (hex.match(/.{1,8}/g) ?? []).join("-");
+}
+
+/** Accept the code however it was typed: dashes, spaces and case are irrelevant. */
+export function normalizeRecoveryCode(raw: string): string {
+  return raw.trim().toUpperCase().replace(/[^A-F0-9]/g, "");
+}
+
+export async function verifyRecoveryCode(code: string, user: UserRecord): Promise<boolean> {
+  if (!user.recoveryHash || !user.recoverySalt) return false;
+  const { hash } = await hashPassword(normalizeRecoveryCode(code), user.recoverySalt);
+  const a = Buffer.from(hash, "hex");
+  const b = Buffer.from(user.recoveryHash, "hex");
   return a.length === b.length && timingSafeEqual(a, b);
 }
 

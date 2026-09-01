@@ -135,6 +135,8 @@ export default function SettingsPage() {
         {msg && <div className="mt-2 text-xs text-dim">{msg}</div>}
       </Panel>
 
+      {auth.status === "authed" && <PasswordPanel />}
+
       {/* tutor */}
       {/* appearance — size the whole UI to taste */}
       <Panel>
@@ -284,5 +286,87 @@ export default function SettingsPage() {
         HALO · PROJECT : VANTA HALO · curriculum verified 2026-08-21 · content is code — see docs/ in the repo
       </div>
     </div>
+  );
+}
+
+// Password change + one-time recovery code. No email infra by design (ADR-004):
+// the recovery code is the self-service lockout path; ADMIN_RESET_TOKEN is break-glass.
+function PasswordPanel() {
+  const auth = useAuth();
+  const [cur, setCur] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const change = async () => {
+    if (busy) return;
+    if (next !== confirm) { setNote({ tone: "error", text: "New passwords do not match." }); return; }
+    setBusy(true); setNote(null);
+    try {
+      const r = await auth.changePassword(cur, next);
+      if (r.ok) { setNote({ tone: "ok", text: r.note ?? "Password changed." }); setCur(""); setNext(""); setConfirm(""); }
+      else setNote({ tone: "error", text: r.error ?? "Could not change password." });
+    } finally { setBusy(false); }
+  };
+  const generate = async () => {
+    if (busy) return;
+    setBusy(true); setNote(null); setCopied(false);
+    try {
+      const r = await auth.generateRecoveryCode();
+      if (r.ok && r.code) setCode(r.code);
+      else setNote({ tone: "error", text: r.error ?? "Could not generate a code." });
+    } finally { setBusy(false); }
+  };
+  const copy = async () => {
+    if (!code) return;
+    try { await navigator.clipboard.writeText(code); setCopied(true); } catch { /* clipboard unavailable; the code is selectable */ }
+  };
+
+  return (
+    <Panel>
+      <SectionTitle>password & recovery</SectionTitle>
+      <form onSubmit={(e) => { e.preventDefault(); change(); }} className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="mono-label">current password</span>
+          <input type="password" autoComplete="current-password" className="mt-1" value={cur} onChange={(e) => setCur(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mono-label">new password</span>
+          <input type="password" autoComplete="new-password" className="mt-1" placeholder="at least 8 characters" value={next} onChange={(e) => setNext(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mono-label">confirm new password</span>
+          <input type="password" autoComplete="new-password" className="mt-1" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+        </label>
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-3">
+          <button type="submit" className="btn btn-acc" disabled={busy || !cur || next.length < 8 || !confirm}>Change password</button>
+          <span className="text-xs text-faint">Signs out every other device; this one stays signed in.</span>
+        </div>
+      </form>
+
+      <div className="mt-4 border-t border-line pt-3">
+        <p className="text-sm text-dim">
+          <b className="text-ink">Recovery code.</b> There is no email reset here, on purpose. If you forget your
+          password, this code lets you set a new one from the sign-in screen (&quot;Forgot your password?&quot;).
+          It is shown once and works once.
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button className="btn" onClick={generate} disabled={busy}>{code ? "Generate a new code" : "Generate recovery code"}</button>
+          {code && <button className="btn" onClick={copy}>{copied ? "✓ Copied" : "Copy"}</button>}
+        </div>
+        {code && (
+          <div className="mt-2 rounded-md border border-acc-math/40 bg-panel2 px-3 py-2">
+            <div className="select-all font-mono text-[15px] tracking-wider text-ink">{code}</div>
+            <div className="mt-1 text-[11px] text-acc-math">
+              Save this somewhere private now. It will not be shown again; generating a new one replaces it.
+            </div>
+          </div>
+        )}
+      </div>
+      {note && <div className={`mt-2 text-xs ${note.tone === "ok" ? "text-acc-robot" : "text-acc-frontier"}`}>{note.text}</div>}
+    </Panel>
   );
 }

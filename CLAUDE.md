@@ -45,8 +45,10 @@ first-class). Product target: **demonstrable independent capability, never engag
   — zero env vars. Upstash env names `KV_REST_API_URL`/`KV_REST_API_TOKEN` (never
   `Redis.fromEnv()`). No Redis ⇒ graceful local mode. Per-user progress at
   `progress:{username}` via cookie-authed `/api/progress` (4MB cap, 500 new events/PUT,
-  20k total, server-side event-id union merge). Lockout recovery: `ADMIN_RESET_TOKEN`
-  set→use→unset per `docs/recalibration/RECOVERY.md`.
+  20k total, server-side event-id union merge). Self-service: change password + one-time
+  recovery code (Settings → `/api/auth/password`, `/recovery-code`; sign-in → `/reset`).
+  Break-glass: `ADMIN_RESET_TOKEN` set→use→unset per `docs/recalibration/RECOVERY.md`
+  (password reset, or `action:"wipe-users"` so the next registration is admin again).
 - **Public repo privacy:** never commit password hashes, emails, API keys, tokens, or
   learner state. Exports (Settings → Export everything, `src/lib/learner-state.ts`)
   are downloads the user holds privately.

@@ -71,6 +71,12 @@ are code-complete; live PUT exercise requires Redis, absent in this environment 
 4-file batch (backup + tutor-readable state ×2 + handoff); learner state never touches
 the repo.
 
+> **P9 addendum (2026-08-21, later session):** the auth lifecycle — including the new
+> self-service password change, one-time recovery code, single-use reset, and the
+> break-glass `wipe-users` action — was exercised end-to-end in a real browser against a
+> local Upstash-REST-compatible in-memory store: **30/30 checks passed, zero page errors.**
+> Real Upstash / production remains the outstanding smoke test (HANDOVER.md §5.6).
+
 **P10 — Honest open debts.** (a) Packet tranche 2: L3–L9 remaining core + L13–L16
 research spine (fallback flow covers them meanwhile); (b) Supabase stays deferred
 behind the recorded triggers in doc 05; (c) no off-app retention nudges (no email

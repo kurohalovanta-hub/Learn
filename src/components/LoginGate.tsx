@@ -9,7 +9,8 @@ import { startSync } from "@/lib/sync";
 export function LoginGate() {
   const auth = useAuth();
   const firstRun = !auth.bootstrapped;
-  const [mode, setMode] = useState<"login" | "register">(firstRun ? "register" : "login");
+  const [mode, setMode] = useState<"login" | "register" | "recover">(firstRun ? "register" : "login");
+  const [code, setCode] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,6 +32,14 @@ export function LoginGate() {
           setMsg({ tone: "ok", text: "Sent. An admin needs to let you in before you can sign in." });
           setMode("login");
         }
+      } else if (mode === "recover") {
+        const r = await auth.resetWithCode(username, code, password);
+        if (r.ok) {
+          setMsg({ tone: "ok", text: r.note ?? "Password reset. Sign in with it now." });
+          setMode("login");
+          setCode("");
+          setPassword("");
+        } else setMsg({ tone: "error", text: r.error ?? "That didn't work." });
       } else {
         const r = await auth.login(username, password);
         if (r.ok) startSync();
@@ -78,6 +87,14 @@ export function LoginGate() {
                   Nobody&apos;s here yet, so this one runs the place. Pick a name and password you&apos;ll remember. Anyone who joins later waits for you to let them in.
                 </p>
               </div>
+            ) : mode === "recover" ? (
+              <div className="mb-4">
+                <div className="mono-label text-acc">recovery</div>
+                <div className="mt-1 text-[16px] font-semibold">Reset your password</div>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-dim">
+                  Your username, the recovery code you saved from Settings, and a new password. The code works once. No code? An admin can reset it for you.
+                </p>
+              </div>
             ) : (
               <div className="mb-4 flex gap-1 rounded-xl border border-line bg-panel2/60 p-1">
                 {(["login", "register"] as const).map((m) => (
@@ -107,15 +124,29 @@ export function LoginGate() {
                   placeholder="letters, numbers, _ or -"
                 />
               </label>
+              {mode === "recover" && (
+                <label className="block">
+                  <span className="mono-label">recovery code</span>
+                  <input
+                    className="mt-1 font-mono"
+                    autoComplete="one-time-code"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX"
+                  />
+                </label>
+              )}
               <label className="block">
-                <span className="mono-label">password</span>
+                <span className="mono-label">{mode === "recover" ? "new password" : "password"}</span>
                 <input
                   className="mt-1"
                   type="password"
-                  autoComplete={mode === "register" ? "new-password" : "current-password"}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === "register" ? "at least 8 characters" : "••••••••"}
+                  placeholder={mode === "login" ? "••••••••" : "at least 8 characters"}
                 />
               </label>
 
@@ -133,12 +164,26 @@ export function LoginGate() {
 
               <button
                 type="submit"
-                disabled={busy || !username || !password}
+                disabled={busy || !username || !password || (mode === "recover" && !code)}
                 className="btn btn-glow w-full justify-center !py-2.5 disabled:opacity-40"
               >
-                {busy ? "…" : firstRun ? "Create my account" : mode === "login" ? "Sign in" : "Ask to join"}
+                {busy ? "…" : firstRun ? "Create my account" : mode === "login" ? "Sign in" : mode === "recover" ? "Reset password" : "Ask to join"}
               </button>
             </form>
+
+            {!firstRun && (
+              <div className="mt-3 text-center">
+                {mode === "recover" ? (
+                  <button type="button" className="text-xs text-dim hover:text-acc" onClick={() => { setMode("login"); setMsg(null); }}>
+                    ← back to sign in
+                  </button>
+                ) : (
+                  <button type="button" className="text-xs text-faint hover:text-acc" onClick={() => { setMode("recover"); setMsg(null); }}>
+                    Forgot your password?
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mt-4"><TutorStatusCard /></div>

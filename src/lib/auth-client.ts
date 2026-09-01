@@ -22,6 +22,9 @@ interface AuthState {
   login: (username: string, password: string) => Promise<{ ok: boolean; error?: string; pending?: boolean }>;
   register: (username: string, password: string) => Promise<{ ok: boolean; error?: string; approved?: boolean }>;
   logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string; note?: string }>;
+  generateRecoveryCode: () => Promise<{ ok: boolean; code?: string; error?: string }>;
+  resetWithCode: (username: string, code: string, newPassword: string) => Promise<{ ok: boolean; error?: string; note?: string }>;
 }
 
 async function json<T>(res: Response): Promise<T & { error?: string }> {
@@ -87,5 +90,34 @@ export const useAuth = create<AuthState>((set, get) => ({
   logout: async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     set({ status: "signedout", user: null });
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    const res = await fetch("/api/auth/password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await json<{ ok?: boolean; note?: string }>(res);
+    if (res.ok && data.ok) return { ok: true, note: data.note };
+    return { ok: false, error: data.error ?? "Could not change password." };
+  },
+
+  generateRecoveryCode: async () => {
+    const res = await fetch("/api/auth/recovery-code", { method: "POST" });
+    const data = await json<{ ok?: boolean; code?: string }>(res);
+    if (res.ok && data.ok && data.code) return { ok: true, code: data.code };
+    return { ok: false, error: data.error ?? "Could not generate a recovery code." };
+  },
+
+  resetWithCode: async (username, code, newPassword) => {
+    const res = await fetch("/api/auth/reset", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username, code, newPassword }),
+    });
+    const data = await json<{ ok?: boolean; note?: string }>(res);
+    if (res.ok && data.ok) return { ok: true, note: data.note };
+    return { ok: false, error: data.error ?? "Reset failed." };
   },
 }));

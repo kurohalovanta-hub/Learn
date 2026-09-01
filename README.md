@@ -41,6 +41,9 @@ derived from an append-only evidence log — there is no button that sets a tier
 - Sessions are HMAC-signed httpOnly cookies; passwords are scrypt-hashed; the
   signing secret is auto-generated and stored in Redis — **no auth env vars needed**.
   Details: [`docs/architecture/ADR-004-auth.md`](docs/architecture/ADR-004-auth.md).
+- **Forgot your password?** Settings → *password & recovery* issues a one-time recovery
+  code (hashed at rest, single use); the sign-in screen's *Forgot your password?* accepts
+  it to set a new one. No email needed. Admins can also reset any user from `/admin`.
 - **Locked out / disaster recovery:** [`docs/recalibration/RECOVERY.md`](docs/recalibration/RECOVERY.md)
   — includes the `ADMIN_RESET_TOKEN` set→use→unset runbook (endpoint 404s while unset).
 - **Settings → Export everything** produces your full backup plus a tutor-readable
@@ -52,7 +55,7 @@ derived from an append-only evidence log — there is no button that sets a tier
 npm install
 npm run dev        # http://localhost:3000
 npm run validate   # content + lesson + packet integrity (also runs in prebuild)
-npm run build      # full production build (334 static pages)
+npm run build      # full production build (337 static pages)
 ```
 
 Node ≥ 20.9 (24.x recommended). Zero environment variables required.

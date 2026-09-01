@@ -12,6 +12,23 @@ everything). Losing any one is recoverable from the other two.
 3. Sign in with the new password. **Unset `ADMIN_RESET_TOKEN` and redeploy.** The endpoint
    404s whenever the variable is absent.
 
+## 1b. Forgot your password (self-service, no env vars)
+Settings → **password & recovery** → *Generate recovery code* — save it privately. When
+locked out: sign-in screen → **Forgot your password?** → username + code + new password.
+The code is hashed at rest, single-use, and rate-limited (5/IP/hour, 5/username/hour). An
+admin can also reset any user's password from `/admin`. Section 1 remains the break-glass
+for a lost code.
+
+## 1c. Start over: wipe every account (single-learner reset)
+Same token dance as section 1, different body. Deletes all accounts so the **next
+registration becomes admin again**; progress blobs are kept unless `wipeProgress: true`.
+```
+curl -X POST https://<domain>/api/auth/recover -H 'content-type: application/json' \
+  -d '{"token":"<the token>","action":"wipe-users"}'
+```
+→ `{ok:true, wiped:N}`. **Register immediately** (the admin slot is open to anyone until
+you do), then unset `ADMIN_RESET_TOKEN` and redeploy.
+
 ## 2. Redis lost / corrupted
 1. Provision a fresh Upstash database (Vercel → Storage), link, redeploy — the auth
    signing secret regenerates automatically (`SET NX`).
